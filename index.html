@@ -169,7 +169,7 @@
 
     <!-- Top Navigation Bar -->
     <header class="w-full max-w-5xl mx-auto px-4 pt-4 pb-2 flex flex-wrap items-center justify-between gap-3 relative z-20">
-        <a href="?" onclick="goHome(event)" class="flex items-center gap-2.5 group cursor-pointer">
+        <a href="#home" onclick="goHome(event)" class="flex items-center gap-2.5 group cursor-pointer">
             <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-sky-400 flex items-center justify-center shadow-lg shadow-sky-500/30 text-white">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
@@ -278,7 +278,7 @@
         <div class="glass-panel rounded-2xl p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-3 border border-sky-400/35">
             <div class="flex items-center gap-3 w-full sm:w-auto min-w-0">
                 <div class="min-w-0 flex-1">
-                    <span class="text-[11px] text-sky-300 font-bold block">رابط صفحتك العام للمشاركة في البايو:</span>
+                    <span class="text-[11px] text-sky-300 font-bold block">رابط صفحتك العام للمشاركة في البايو (يعمل على جميع الأجهزة):</span>
                     <input id="myPublicUrlInput" type="text" readonly dir="ltr" class="bg-transparent text-white text-xs sm:text-sm font-mono w-full outline-none truncate">
                 </div>
             </div>
@@ -430,7 +430,55 @@
         let authMode = 'login';
         let currentUser = null;
         let draftProfile = null;
-        let activeShareUrl = window.location.href;
+        let activeShareUrl = window.location.origin + window.location.pathname;
+
+        // تشفير وفك تشفير بيانات الصفحة داخل الرابط لتعمل على كل الأجهزة والمتصفحات
+        function encodeSharePayload(profile) {
+            try {
+                const payload = {
+                    u: profile.username,
+                    n: profile.displayName,
+                    b: profile.bio,
+                    t: profile.theme,
+                    a: (profile.avatar && !profile.avatar.startsWith('data:')) ? profile.avatar : '',
+                    l: (profile.links || []).map(x => [x.title, x.url, x.icon])
+                };
+                const jsonStr = JSON.stringify(payload);
+                const bytes = new TextEncoder().encode(jsonStr);
+                let bin = '';
+                bytes.forEach(b => bin += String.fromCharCode(b));
+                return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+            } catch (e) {
+                return '';
+            }
+        }
+
+        function decodeSharePayload(encodedStr) {
+            try {
+                let b64 = encodedStr.replace(/-/g, '+').replace(/_/g, '/');
+                while (b64.length % 4) b64 += '=';
+                const bin = atob(b64);
+                const bytes = new Uint8Array(bin.length);
+                for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+                const jsonStr = new TextDecoder().decode(bytes);
+                const p = JSON.parse(jsonStr);
+                return {
+                    username: normalizeUsername(p.u),
+                    displayName: p.n || p.u,
+                    bio: p.b || '',
+                    theme: p.t || 'ocean',
+                    avatar: p.a || '',
+                    links: Array.isArray(p.l) ? p.l.map(arr => ({
+                        title: arr[0] || 'رابط',
+                        url: arr[1] || '#',
+                        icon: arr[2] || 'globe',
+                        featured: false
+                    })) : []
+                };
+            } catch (e) {
+                return null;
+            }
+        }
 
         async function hashPassword(password) {
             if (window.crypto && window.crypto.subtle) {
@@ -492,11 +540,22 @@
             }
         }
 
-        function buildProfileUrl(username) {
+        // بناء رابط نظيف بدون علامة استفهام تسبب 404 على GitHub Pages مع تضمين البيانات
+        function buildProfileUrl(username, profileObj) {
             const clean = normalizeUsername(username);
-            const url = new URL(window.location.href);
-            url.search = clean ? ('?u=' + encodeURIComponent(clean)) : '';
-            return url.toString();
+            const baseUrl = window.location.origin + window.location.pathname;
+            if (!clean) return baseUrl;
+
+            const db = getUsersDB();
+            const record = profileObj || db[clean];
+            let hash = '#u=' + encodeURIComponent(clean);
+            if (record) {
+                const encodedData = encodeSharePayload(record);
+                if (encodedData) {
+                    hash += '&d=' + encodedData;
+                }
+            }
+            return baseUrl + hash;
         }
 
         function getInitials(name, username) {
@@ -668,7 +727,7 @@
         }
 
         function populateDashboardUI() {
-            const publicUrl = buildProfileUrl(draftProfile.username);
+            const publicUrl = buildProfileUrl(draftProfile.username, draftProfile);
             activeShareUrl = publicUrl;
 
             document.getElementById('myPublicUrlInput').value = publicUrl;
@@ -838,8 +897,13 @@
             db[cleanUser] = updated;
             saveUsersDB(db);
             draftProfile = JSON.parse(JSON.stringify(updated));
+
+            const newUrl = buildProfileUrl(cleanUser, updated);
+            activeShareUrl = newUrl;
+            document.getElementById('myPublicUrlInput').value = newUrl;
+
             renderLivePreview();
-            showToast('تم حفظ جميع التغييرات بنجاح!');
+            showToast('تم حفظ جميع التغييرات وتحديث الرابط بنجاح!');
         }
 
         function renderLivePreview() {
@@ -848,22 +912,23 @@
             previewBody.innerHTML = buildProfileMarkup(draftProfile, true);
         }
 
-        function openPublicProfile(username, pushUrl = true) {
+        function openPublicProfile(username, pushUrl = true, embeddedProfile = null) {
             const cleanUser = normalizeUsername(username);
             if (!cleanUser) {
                 showAuthView();
                 return;
             }
 
+            const db = getUsersDB();
+            const profile = db[cleanUser] || embeddedProfile || null;
+            const targetUrl = buildProfileUrl(cleanUser, profile);
+            activeShareUrl = targetUrl;
+
             if (pushUrl) {
                 try {
-                    window.history.pushState({ u: cleanUser }, '', buildProfileUrl(cleanUser));
+                    window.history.pushState({ u: cleanUser }, '', targetUrl);
                 } catch (e) {}
             }
-
-            const db = getUsersDB();
-            const profile = db[cleanUser] || null;
-            activeShareUrl = buildProfileUrl(cleanUser);
 
             hideAllViews();
             updateNavbar('public', cleanUser);
@@ -875,7 +940,7 @@
                     <div class="glass-panel rounded-3xl p-8 text-center max-w-md w-full mt-6">
                         <div class="w-16 h-16 rounded-full bg-sky-500/15 border border-sky-400/30 text-sky-400 flex items-center justify-center text-2xl mx-auto mb-4 font-extrabold">?</div>
                         <h2 class="text-xl font-extrabold text-white mb-2">الحساب غير موجود</h2>
-                        <p class="text-sm text-sky-200/75 mb-5 font-tajawal">لا يوجد مستخدم بالاسم <span dir="ltr" class="font-mono text-sky-300">@${escapeHTML(cleanUser)}</span> في هذا المتصفح حالياً. يمكنك حجز هذا اليوزر الآن مجاناً!</p>
+                        <p class="text-sm text-sky-200/75 mb-5 font-tajawal">لا يوجد مستخدم بالاسم <span dir="ltr" class="font-mono text-sky-300">@${escapeHTML(cleanUser)}</span> حالياً. يمكنك حجز هذا اليوزر الآن مجاناً!</p>
                         <button type="button" onclick="goHome(event)" class="bg-gradient-to-r from-sky-500 to-blue-600 text-white font-bold px-6 py-2.5 rounded-xl text-sm cursor-pointer">
                             أنشئ صفحتك مجاناً
                         </button>
@@ -945,12 +1010,13 @@
 
         function previewMyPublicPage() {
             if (draftProfile && draftProfile.username) {
-                openPublicProfile(draftProfile.username);
+                openPublicProfile(draftProfile.username, true, draftProfile);
             }
         }
 
         function copyMyPublicLink() {
-            const url = document.getElementById('myPublicUrlInput').value;
+            const url = buildProfileUrl(draftProfile.username, draftProfile);
+            document.getElementById('myPublicUrlInput').value = url;
             copyToClipboard(url);
             showToast('تم نسخ رابط صفحتك العام!');
         }
@@ -993,6 +1059,9 @@
         }
 
         function copyToClipboard(text) {
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).catch(() => {});
+            }
             const ta = document.createElement('textarea');
             ta.value = text;
             ta.style.position = 'fixed';
@@ -1034,13 +1103,30 @@
             }, 3000);
         }
 
-        window.addEventListener('popstate', () => {
-            const params = new URLSearchParams(window.location.search);
-            const u = params.get('u');
-            if (u) openPublicProfile(u, false);
-            else if (currentUser) openDashboard();
-            else showAuthView();
-        });
+        function parseRouteParams() {
+            const hashStr = window.location.hash.replace(/^#/, '');
+            const hashParams = new URLSearchParams(hashStr);
+            const searchParams = new URLSearchParams(window.location.search);
+
+            const u = hashParams.get('u') || searchParams.get('u');
+            const d = hashParams.get('d') || searchParams.get('d');
+            const embedded = d ? decodeSharePayload(d) : null;
+            return { u: u || (embedded ? embedded.username : null), embedded };
+        }
+
+        function handleRouteChange() {
+            const { u, embedded } = parseRouteParams();
+            if (u) {
+                openPublicProfile(u, false, embedded);
+            } else if (currentUser) {
+                openDashboard();
+            } else {
+                showAuthView();
+            }
+        }
+
+        window.addEventListener('hashchange', handleRouteChange);
+        window.addEventListener('popstate', handleRouteChange);
 
         document.getElementById('qrModal').addEventListener('click', function(e) {
             if (e.target === this) closeQrModal();
@@ -1052,15 +1138,7 @@
             if (savedUser && getUsersDB()[savedUser]) {
                 currentUser = savedUser;
             }
-            const params = new URLSearchParams(window.location.search);
-            const targetUser = params.get('u');
-            if (targetUser) {
-                openPublicProfile(targetUser, false);
-            } else if (currentUser) {
-                openDashboard();
-            } else {
-                showAuthView();
-            }
+            handleRouteChange();
         })();
     </script>
 </body>
