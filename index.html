@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DF LINK | منصة الروابط الذكية</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts: Cairo & Tajawal -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-primary: #030712;
+            --accent-main: #0ea5e9;
+            --accent-glow: rgba(14, 165, 233, 0.45);
+            --accent-secondary: #38bdf8;
+            --card-bg: rgba(15, 23, 42, 0.62);
+            --card-border: rgba(56, 189, 248, 0.28);
+            --card-hover-border: rgba(56, 189, 248, 0.8);
+        }
+
+        [data-theme="ocean"] {
+            --bg-primary: #030712;
+            --accent-main: #0ea5e9;
+            --accent-glow: rgba(14, 165, 233, 0.45);
+            --accent-secondary: #38bdf8;
+            --card-bg: rgba(15, 23, 42, 0.62);
+            --card-border: rgba(56, 189, 248, 0.28);
+            --card-hover-border: rgba(56, 189, 248, 0.8);
+        }
+
+        [data-theme="cyber"] {
+            --bg-primary: #020617;
+            --accent-main: #06b6d4;
+            --accent-glow: rgba(6, 182, 212, 0.5);
+            --accent-secondary: #22d3ee;
+            --card-bg: rgba(8, 47, 73, 0.52);
+            --card-border: rgba(34, 211, 238, 0.34);
+            --card-hover-border: rgba(34, 211, 238, 0.88);
+        }
+
+        [data-theme="midnight"] {
+            --bg-primary: #02040c;
+            --accent-main: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.48);
+            --accent-secondary: #60a5fa;
+            --card-bg: rgba(15, 23, 42, 0.72);
+            --card-border: rgba(96, 165, 250, 0.28);
+            --card-hover-border: rgba(96, 165, 250, 0.85);
+        }
+
+        body {
+            font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-primary);
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .font-tajawal {
+            font-family: 'Tajawal', 'Cairo', sans-serif;
+        }
+
+        .bg-orb-1 {
+            position: fixed;
+            top: -12%;
+            right: -10%;
+            width: 55vw;
+            height: 55vw;
+            max-width: 560px;
+            max-height: 560px;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            border-radius: 50%;
+            filter: blur(65px);
+            z-index: -1;
+            pointer-events: none;
+            animation: floatOrb 12s ease-in-out infinite alternate;
+        }
+
+        .bg-orb-2 {
+            position: fixed;
+            bottom: -15%;
+            left: -10%;
+            width: 60vw;
+            height: 60vw;
+            max-width: 620px;
+            max-height: 620px;
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.32) 0%, transparent 70%);
+            border-radius: 50%;
+            filter: blur(75px);
+            z-index: -1;
+            pointer-events: none;
+            animation: floatOrb 15s ease-in-out infinite alternate-reverse;
+        }
+
+        @keyframes floatOrb {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(-25px, 35px) scale(1.08); }
+        }
+
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(to right, rgba(56, 189, 248, 0.045) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(56, 189, 248, 0.045) 1px, transparent 1px);
+            background-size: 36px 36px;
+            z-index: -1;
+            pointer-events: none;
+            mask-image: radial-gradient(ellipse at center, black 45%, transparent 88%);
+            -webkit-mask-image: radial-gradient(ellipse at center, black 45%, transparent 88%);
+        }
+
+        .glass-panel {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            box-shadow: 0 12px 38px rgba(0, 0, 0, 0.45);
+        }
+
+        .link-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid var(--card-border);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.34);
+            transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .link-card:hover {
+            transform: translateY(-2px) scale(1.01);
+            border-color: var(--card-hover-border);
+            box-shadow: 0 12px 32px -4px var(--accent-glow);
+        }
+
+        .link-card:active {
+            transform: scale(0.99);
+        }
+
+        .avatar-ring {
+            box-shadow: 0 0 26px var(--accent-glow), inset 0 0 12px var(--accent-glow);
+            border: 3px solid var(--accent-secondary);
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.85);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-main);
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-sky-500 selection:text-white" data-theme="ocean">
+
+    <div class="bg-orb-1"></div>
+    <div class="bg-orb-2"></div>
+    <div class="bg-grid"></div>
+
+    <!-- Top Navigation Bar -->
+    <header class="w-full max-w-5xl mx-auto px-4 pt-4 pb-2 flex flex-wrap items-center justify-between gap-3 relative z-20">
+        <a href="?" onclick="goHome(event)" class="flex items-center gap-2.5 group cursor-pointer">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-sky-400 flex items-center justify-center shadow-lg shadow-sky-500/30 text-white">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                </svg>
+            </div>
+            <div>
+                <span dir="ltr" class="font-extrabold text-lg tracking-wide text-white group-hover:text-sky-300 transition block">DF LINK</span>
+                <span class="text-[11px] text-sky-400 block -mt-1 font-tajawal">منصة الروابط الذكية</span>
+            </div>
+        </a>
+
+        <div id="navActions" class="flex items-center gap-2">
+            <button type="button" onclick="openPublicProfile('demo')" class="bg-sky-500/15 hover:bg-sky-500/25 border border-sky-400/35 text-sky-200 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer">
+                <span>معاينة demo</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- VIEW 1: AUTH -->
+    <main id="authView" class="w-full max-w-lg mx-auto px-4 pt-5 pb-20">
+        <div class="text-center mb-6">
+            <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-sky-500/15 border border-sky-400/30 text-sky-300 text-xs font-semibold mb-3">
+                <span class="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span>
+                <span>مجاني بالكامل • دخول باليوزر وكلمة السر فقط</span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-white mb-2 leading-snug">
+                <span dir="ltr" class="text-sky-400">DF LINK</span> — منصة الروابط الذكية
+            </h1>
+            <p class="font-tajawal text-sky-100/75 text-sm leading-relaxed">
+                أنشئ حسابك بيوزر وكلمة سر فريدة بدون تكرار، عدّل صورتك وروابطك في أي وقت، وشارك رابطك الخاص مع متابعيك.
+            </p>
+        </div>
+
+        <div class="glass-panel rounded-3xl p-6 sm:p-7 mb-5">
+            <div class="grid grid-cols-2 gap-2 p-1 bg-slate-950/75 rounded-2xl border border-sky-500/20 mb-5">
+                <button type="button" id="tabLoginBtn" onclick="switchAuthTab('login')" class="py-2.5 rounded-xl text-sm font-bold transition bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-md cursor-pointer">
+                    تسجيل الدخول
+                </button>
+                <button type="button" id="tabRegisterBtn" onclick="switchAuthTab('register')" class="py-2.5 rounded-xl text-sm font-bold transition text-sky-200/70 hover:text-white cursor-pointer">
+                    إنشاء حساب جديد
+                </button>
+            </div>
+
+            <div id="authErrorBox" class="hidden mb-4 p-3 rounded-xl bg-red-500/15 border border-red-400/40 text-red-200 text-xs font-semibold flex items-center gap-2">
+                <svg class="w-4 h-4 text-red-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span id="authErrorText"></span>
+            </div>
+
+            <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-sky-200 mb-1.5">اسم المستخدم (اليوزر)</label>
+                    <div class="relative flex items-center">
+                        <span class="absolute left-3.5 text-sky-400/80 text-sm font-bold" dir="ltr">@</span>
+                        <input id="authUsername" type="text" dir="ltr" required autocomplete="username"
+                               placeholder="denjix"
+                               class="w-full bg-slate-950/80 border border-sky-500/30 focus:border-sky-400 rounded-xl pl-8 pr-4 py-3 text-sm text-white placeholder-slate-500 outline-none transition">
+                    </div>
+                    <p class="text-[11px] text-sky-300/65 mt-1 font-tajawal">يُسمح بالحروف الإنجليزية والأرقام والشرطة السفلية (_) فقط، ولا يمكن تكرار الاسم</p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-sky-200 mb-1.5">كلمة السر</label>
+                    <div class="relative flex items-center">
+                        <input id="authPassword" type="password" dir="ltr" required autocomplete="current-password"
+                               placeholder="••••••••"
+                               class="w-full bg-slate-950/80 border border-sky-500/30 focus:border-sky-400 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder-slate-500 outline-none transition">
+                        <button type="button" onclick="togglePasswordVisibility()" class="absolute left-3 text-slate-400 hover:text-sky-300 p-1 cursor-pointer" title="إظهار / إخفاء كلمة السر">
+                            <svg id="passEyeIcon" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <button id="authSubmitBtn" type="submit" class="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold py-3.5 rounded-xl text-sm shadow-lg shadow-sky-500/25 transition flex items-center justify-center gap-2 cursor-pointer mt-2">
+                    <span id="authSubmitText">دخول إلى حسابي</span>
+                </button>
+            </form>
+
+            <div class="mt-4 pt-4 border-t border-sky-500/20">
+                <button type="button" onclick="quickDemoLogin()" class="w-full bg-sky-500/15 hover:bg-sky-500/25 border border-sky-400/40 text-sky-200 font-bold py-2.5 px-4 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 transition cursor-pointer">
+                    <span>دخول سريع لحساب <span dir="ltr" class="font-mono text-white">demo</span> التجريبي (كلمة السر: 1234)</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="glass-panel rounded-2xl p-4 sm:p-5">
+            <h2 class="text-xs font-bold text-sky-300 mb-2.5 flex items-center gap-1.5">
+                <span>زيارة صفحة أي مستخدم مسجل</span>
+            </h2>
+            <form onsubmit="handleQuickSearch(event)" class="flex gap-2">
+                <input id="searchUsernameInput" type="text" dir="ltr" placeholder="اكتب اليوزر مثل: demo"
+                       class="w-full bg-slate-950/80 border border-sky-500/25 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none">
+                <button type="submit" class="bg-sky-500/25 hover:bg-sky-500/40 border border-sky-400/40 text-sky-100 font-bold px-4 py-2.5 rounded-xl text-xs shrink-0 transition cursor-pointer">
+                    عرض الصفحة
+                </button>
+            </form>
+        </div>
+    </main>
+
+    <!-- VIEW 2: DASHBOARD -->
+    <main id="dashboardView" class="hidden w-full max-w-5xl mx-auto px-4 pt-4 pb-24">
+        <div class="glass-panel rounded-2xl p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-3 border border-sky-400/35">
+            <div class="flex items-center gap-3 w-full sm:w-auto min-w-0">
+                <div class="min-w-0 flex-1">
+                    <span class="text-[11px] text-sky-300 font-bold block">رابط صفحتك العام للمشاركة في البايو:</span>
+                    <input id="myPublicUrlInput" type="text" readonly dir="ltr" class="bg-transparent text-white text-xs sm:text-sm font-mono w-full outline-none truncate">
+                </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end shrink-0">
+                <button type="button" onclick="copyMyPublicLink()" class="bg-sky-500 hover:bg-sky-400 text-white font-bold px-3.5 py-2.5 rounded-xl text-xs transition cursor-pointer">
+                    نسخ رابط صفحتي
+                </button>
+                <button type="button" onclick="openQrModal()" class="bg-slate-800/90 hover:bg-slate-700 border border-sky-400/30 text-sky-200 font-bold px-3.5 py-2.5 rounded-xl text-xs transition cursor-pointer">
+                    رمز QR
+                </button>
+                <button type="button" onclick="previewMyPublicPage()" class="bg-slate-800/90 hover:bg-slate-700 border border-sky-400/30 text-sky-200 font-bold px-3.5 py-2.5 rounded-xl text-xs transition cursor-pointer">
+                    معاينة صفحتي العامة
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <div class="lg:col-span-7 space-y-5">
+                <div class="glass-panel rounded-3xl p-5 sm:p-6 space-y-5">
+                    <div class="flex items-center justify-between border-b border-sky-500/20 pb-3">
+                        <h2 class="text-base sm:text-lg font-extrabold text-white">تعديل الملف الشخصي والمظهر</h2>
+                        <span id="loggedUsernameBadge" dir="ltr" class="text-xs font-mono bg-sky-500/15 border border-sky-400/30 text-sky-300 px-2.5 py-1 rounded-lg">@user</span>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-sky-200 mb-2">اختر درجة الثيم الأزرق</label>
+                        <div class="grid grid-cols-3 gap-2.5">
+                            <button type="button" onclick="setEditorTheme('ocean')" data-theme-choice="ocean" class="theme-choice-btn p-2.5 rounded-xl border border-sky-400 bg-sky-950/60 flex flex-col items-center gap-1.5 cursor-pointer transition">
+                                <span class="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-600 to-sky-400 shadow"></span>
+                                <span class="text-xs font-bold text-white">أزرق محيطي</span>
+                            </button>
+                            <button type="button" onclick="setEditorTheme('cyber')" data-theme-choice="cyber" class="theme-choice-btn p-2.5 rounded-xl border border-slate-700 bg-slate-900/60 flex flex-col items-center gap-1.5 cursor-pointer transition">
+                                <span class="w-6 h-6 rounded-full bg-gradient-to-tr from-cyan-600 to-teal-300 shadow"></span>
+                                <span class="text-xs font-bold text-white">سيان سايبر</span>
+                            </button>
+                            <button type="button" onclick="setEditorTheme('midnight')" data-theme-choice="midnight" class="theme-choice-btn p-2.5 rounded-xl border border-slate-700 bg-slate-900/60 flex flex-col items-center gap-1.5 cursor-pointer transition">
+                                <span class="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-900 to-blue-500 shadow"></span>
+                                <span class="text-xs font-bold text-white">أزرق ليلي</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-sky-200 mb-2">الصورة الشخصية</label>
+                        <div class="flex flex-col sm:flex-row items-center gap-4 bg-slate-950/60 p-3.5 rounded-2xl border border-sky-500/20">
+                            <div id="editorAvatarPreviewBox" class="w-16 h-16 rounded-full overflow-hidden avatar-ring shrink-0 bg-gradient-to-tr from-sky-700 to-blue-500 flex items-center justify-center text-white font-extrabold text-xl"></div>
+                            <div class="w-full space-y-2">
+                                <div class="flex flex-wrap gap-2">
+                                    <label class="flex-1 bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/40 text-sky-200 text-xs font-bold py-2 px-3 rounded-xl cursor-pointer flex items-center justify-center gap-1.5 transition">
+                                        <span>رفع صورة من الجهاز</span>
+                                        <input type="file" accept="image/*" onchange="handleAvatarFileUpload(event)" class="hidden">
+                                    </label>
+                                    <button type="button" onclick="resetAvatarToInitials()" class="bg-red-500/15 hover:bg-red-500/25 border border-red-400/35 text-red-200 text-xs font-bold py-2 px-3 rounded-xl cursor-pointer transition">
+                                        حذف الصورة
+                                    </button>
+                                </div>
+                                <input id="editAvatarUrlInput" type="text" dir="ltr" placeholder="أو الصق رابط صورة مباشر (https://...)" oninput="handleAvatarUrlInput(this.value)"
+                                       class="w-full bg-slate-900/90 border border-slate-700 focus:border-sky-400 rounded-xl px-3 py-1.5 text-xs text-white outline-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-3.5">
+                        <div>
+                            <label class="block text-xs font-bold text-sky-200 mb-1">الاسم الظاهر في الصفحة</label>
+                            <input id="editDisplayName" type="text" placeholder="اكتب اسمك أو لقبك" oninput="syncLivePreview()"
+                                   class="w-full bg-slate-950/80 border border-sky-500/25 focus:border-sky-400 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-sky-200 mb-1">النبذة التعريفية (Bio)</label>
+                            <textarea id="editBio" rows="2" placeholder="اكتب نبذة قصيرة عنك أو عن حساباتك..." oninput="syncLivePreview()"
+                                      class="w-full bg-slate-950/80 border border-sky-500/25 focus:border-sky-400 rounded-xl px-3.5 py-2 text-sm text-white outline-none resize-none"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel rounded-3xl p-5 sm:p-6 space-y-4">
+                    <div class="flex items-center justify-between border-b border-sky-500/20 pb-3">
+                        <h2 class="text-base sm:text-lg font-extrabold text-white">إدارة روابطي</h2>
+                        <button type="button" onclick="addEditorLink()" class="bg-sky-500/20 hover:bg-sky-500/35 border border-sky-400/40 text-sky-200 text-xs font-bold px-3.5 py-2 rounded-xl cursor-pointer transition">
+                            + إضافة رابط جديد
+                        </button>
+                    </div>
+                    <div id="editorLinksContainer" class="space-y-3"></div>
+                </div>
+
+                <div class="sticky bottom-4 z-20">
+                    <button type="button" onclick="saveUserProfile()" class="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-extrabold py-3.5 rounded-2xl text-sm sm:text-base shadow-xl shadow-sky-500/30 border border-sky-300/30 flex items-center justify-center gap-2.5 transition cursor-pointer">
+                        <span>حفظ التغييرات الآن</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="lg:col-span-5 lg:sticky lg:top-6">
+                <div class="text-center mb-2">
+                    <span class="text-xs font-bold text-sky-300/85 bg-sky-950/70 border border-sky-500/25 px-3 py-1 rounded-full inline-flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span>معاينة حية لبطاقة هاتفك</span>
+                    </span>
+                </div>
+                <div class="glass-panel rounded-[2.2rem] p-5 border-2 border-sky-400/35 shadow-2xl">
+                    <div id="livePreviewBody" class="flex flex-col items-center text-center py-4"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- VIEW 3: PUBLIC PROFILE -->
+    <main id="publicProfileView" class="hidden w-full max-w-xl mx-auto px-4 pt-6 pb-24">
+        <div id="publicProfileContent" class="flex flex-col items-center text-center"></div>
+    </main>
+
+    <!-- Toast -->
+    <div id="toastBox" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-300 transform -translate-y-3">
+        <div class="bg-slate-900/95 border border-sky-400/50 text-white px-5 py-2.5 rounded-full shadow-2xl flex items-center gap-2.5 text-xs sm:text-sm font-bold backdrop-blur-md">
+            <span id="toastIcon" class="w-2.5 h-2.5 rounded-full bg-sky-400"></span>
+            <span id="toastText">تم بنجاح!</span>
+        </div>
+    </div>
+
+    <!-- QR Modal -->
+    <div id="qrModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+        <div class="glass-panel w-full max-w-sm rounded-3xl p-6 relative border border-sky-400/35 text-center">
+            <button type="button" onclick="closeQrModal()" class="absolute top-4 left-4 w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center cursor-pointer">✕</button>
+            <h3 class="text-lg font-extrabold text-white mb-1">رمز QR لصفحتك</h3>
+            <p class="text-xs text-sky-200/75 mb-5 font-tajawal">امسح الرمز بكاميرا الهاتف لفتح صفحتك مباشرة</p>
+            <div class="bg-white p-3.5 rounded-2xl inline-block mb-5 shadow-lg shadow-sky-500/20">
+                <img id="qrModalImg" src="" alt="QR Code" class="w-44 h-44 mx-auto rounded-lg" onerror="handleQrFallback()">
+                <canvas id="qrFallbackCanvas" width="176" height="176" class="hidden mx-auto rounded-lg"></canvas>
+            </div>
+            <button type="button" onclick="copyShareModalUrl()" class="w-full bg-sky-500 hover:bg-sky-400 text-white font-bold py-2.5 rounded-xl text-xs transition cursor-pointer">
+                نسخ رابط الصفحة
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const PLATFORM_ICONS = {
+            globe: { label: 'موقع شخصي / رابط عام', svg: '<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>' },
+            tiktok: { label: 'تيك توك (TikTok)', svg: '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/></svg>' },
+            youtube: { label: 'يوتيوب (YouTube)', svg: '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>' },
+            instagram: { label: 'إنستغرام (Instagram)', svg: '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>' },
+            discord: { label: 'ديسكورد (Discord)', svg: '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>' }
+        };
+
+        const USERS_STORAGE_KEY = 'dflink_users_db_v2';
+        const SESSION_STORAGE_KEY = 'dflink_active_session_v2';
+
+        let authMode = 'login';
+        let currentUser = null;
+        let draftProfile = null;
+        let activeShareUrl = window.location.href;
+
+        async function hashPassword(password) {
+            if (window.crypto && window.crypto.subtle) {
+                const enc = new TextEncoder().encode(password);
+                const buf = await window.crypto.subtle.digest('SHA-256', enc);
+                return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+            }
+            return btoa(unescape(encodeURIComponent(password)));
+        }
+
+        function normalizeUsername(raw) {
+            return String(raw || '').trim().toLowerCase();
+        }
+
+        function isValidUsername(u) {
+            return /^[a-z0-9_]{3,24}$/.test(u);
+        }
+
+        async function ensureDefaultDemoUser() {
+            const db = getUsersDB();
+            if (!db['demo']) {
+                db['demo'] = {
+                    username: 'demo',
+                    passwordHash: await hashPassword('1234'),
+                    displayName: 'حساب DF LINK التجريبي',
+                    bio: 'مرحباً بك في DF LINK ✨ | صانع محتوى ومصمم رقمي',
+                    avatar: '',
+                    theme: 'ocean',
+                    links: [
+                        { title: 'حسابي على تيك توك', url: 'https://tiktok.com', icon: 'tiktok', featured: true },
+                        { title: 'قناتي على يوتيوب', url: 'https://youtube.com', icon: 'youtube', featured: false }
+                    ]
+                };
+                saveUsersDB(db);
+            }
+        }
+
+        function getUsersDB() {
+            try {
+                const parsed = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY) || '{}');
+                const normalizedDb = {};
+                Object.keys(parsed).forEach(k => {
+                    const cleanKey = normalizeUsername(k);
+                    if (cleanKey) {
+                        normalizedDb[cleanKey] = { ...parsed[k], username: cleanKey };
+                    }
+                });
+                return normalizedDb;
+            } catch (e) {
+                return {};
+            }
+        }
+
+        function saveUsersDB(db) {
+            try {
+                localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(db));
+            } catch (e) {
+                showToast('مساحة التخزين ممتلئة، حاول تقليل حجم الصورة', true);
+            }
+        }
+
+        function buildProfileUrl(username) {
+            const clean = normalizeUsername(username);
+            const url = new URL(window.location.href);
+            url.search = clean ? ('?u=' + encodeURIComponent(clean)) : '';
+            return url.toString();
+        }
+
+        function getInitials(name, username) {
+            const base = (name || username || 'DF').trim();
+            return base.slice(0, 2).toUpperCase();
+        }
+
+        function hideAllViews() {
+            document.getElementById('authView').classList.add('hidden');
+            document.getElementById('dashboardView').classList.add('hidden');
+            document.getElementById('publicProfileView').classList.add('hidden');
+        }
+
+        function updateNavbar(mode, viewingUser) {
+            const nav = document.getElementById('navActions');
+            if (!nav) return;
+
+            if (mode === 'dashboard') {
+                nav.innerHTML = `
+                    <button type="button" onclick="previewMyPublicPage()" class="bg-sky-500/15 hover:bg-sky-500/25 border border-sky-400/35 text-sky-200 font-bold px-3.5 py-2 rounded-xl text-xs transition cursor-pointer">
+                        معاينة صفحتي العامة
+                    </button>
+                    <button type="button" onclick="handleLogout()" class="bg-red-500/15 hover:bg-red-500/25 border border-red-400/35 text-red-200 font-bold px-3.5 py-2 rounded-xl text-xs transition cursor-pointer">
+                        تسجيل الخروج
+                    </button>
+                `;
+            } else if (mode === 'public') {
+                const backBtn = currentUser
+                    ? `<button type="button" onclick="openDashboard()" class="bg-sky-500 hover:bg-sky-400 text-white font-bold px-3.5 py-2 rounded-xl text-xs transition cursor-pointer">العودة للوحة التحكم</button>`
+                    : `<button type="button" onclick="goHome(event)" class="bg-sky-500 hover:bg-sky-400 text-white font-bold px-3.5 py-2 rounded-xl text-xs transition cursor-pointer">أنشئ صفحتك مجاناً</button>`;
+                nav.innerHTML = `
+                    <button type="button" onclick="openQrModal('${escapeHTML(viewingUser || '')}')" class="bg-slate-800/85 hover:bg-slate-700 border border-sky-400/30 text-sky-200 font-bold px-3 py-2 rounded-xl text-xs transition cursor-pointer">QR</button>
+                    ${backBtn}
+                `;
+            } else {
+                nav.innerHTML = `
+                    <button type="button" onclick="openPublicProfile('demo')" class="bg-sky-500/15 hover:bg-sky-500/25 border border-sky-400/35 text-sky-200 font-bold px-3.5 py-2 rounded-xl text-xs transition cursor-pointer">معاينة demo</button>
+                `;
+            }
+        }
+
+        function showAuthView() {
+            hideAllViews();
+            document.body.setAttribute('data-theme', 'ocean');
+            updateNavbar('auth');
+            document.getElementById('authErrorBox').classList.add('hidden');
+            document.getElementById('authView').classList.remove('hidden');
+        }
+
+        function switchAuthTab(mode) {
+            authMode = mode;
+            const loginBtn = document.getElementById('tabLoginBtn');
+            const regBtn = document.getElementById('tabRegisterBtn');
+            const submitText = document.getElementById('authSubmitText');
+            document.getElementById('authErrorBox').classList.add('hidden');
+
+            if (mode === 'login') {
+                loginBtn.className = 'py-2.5 rounded-xl text-sm font-bold transition bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-md cursor-pointer';
+                regBtn.className = 'py-2.5 rounded-xl text-sm font-bold transition text-sky-200/70 hover:text-white cursor-pointer';
+                submitText.textContent = 'دخول إلى حسابي';
+            } else {
+                regBtn.className = 'py-2.5 rounded-xl text-sm font-bold transition bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-md cursor-pointer';
+                loginBtn.className = 'py-2.5 rounded-xl text-sm font-bold transition text-sky-200/70 hover:text-white cursor-pointer';
+                submitText.textContent = 'إنشاء حسابي الآن';
+            }
+        }
+
+        function showAuthError(msg) {
+            const box = document.getElementById('authErrorBox');
+            document.getElementById('authErrorText').textContent = msg;
+            box.classList.remove('hidden');
+        }
+
+        function togglePasswordVisibility() {
+            const input = document.getElementById('authPassword');
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+
+        async function handleAuthSubmit(e) {
+            e.preventDefault();
+            const username = normalizeUsername(document.getElementById('authUsername').value);
+            const password = document.getElementById('authPassword').value;
+            document.getElementById('authErrorBox').classList.add('hidden');
+
+            if (!isValidUsername(username)) {
+                showAuthError('اسم المستخدم يجب أن يكون 3 إلى 24 حرفاً (أحرف إنجليزية وأرقام و _ فقط).');
+                return;
+            }
+            if (password.length < 4) {
+                showAuthError('كلمة السر يجب أن تكون 4 خانات على الأقل.');
+                return;
+            }
+
+            const db = getUsersDB();
+            const pwdHash = await hashPassword(password);
+
+            if (authMode === 'register') {
+                if (Object.prototype.hasOwnProperty.call(db, username)) {
+                    showAuthError('اسم المستخدم "' + username + '" مستعمل مسبقاً ولا يمكن تكراره. اختر اسماً آخر.');
+                    return;
+                }
+                db[username] = {
+                    username: username,
+                    passwordHash: pwdHash,
+                    displayName: username,
+                    bio: 'مرحباً بكم في صفحتي على DF LINK ✨',
+                    avatar: '',
+                    theme: 'ocean',
+                    links: [
+                        { title: 'حسابي على تيك توك', url: 'https://tiktok.com', icon: 'tiktok', featured: true }
+                    ]
+                };
+                saveUsersDB(db);
+                localStorage.setItem(SESSION_STORAGE_KEY, username);
+                currentUser = username;
+                showToast('تم إنشاء حسابك بنجاح!');
+                openDashboard();
+            } else {
+                const record = db[username];
+                if (!record) {
+                    showAuthError('اسم المستخدم غير موجود، يمكنك إنشاء حساب جديد به.');
+                    return;
+                }
+                if (record.passwordHash !== pwdHash) {
+                    showAuthError('كلمة السر غير صحيحة، حاول مرة أخرى.');
+                    return;
+                }
+                localStorage.setItem(SESSION_STORAGE_KEY, username);
+                currentUser = username;
+                showToast('أهلاً بك في DF LINK!');
+                openDashboard();
+            }
+        }
+
+        async function quickDemoLogin() {
+            await ensureDefaultDemoUser();
+            localStorage.setItem(SESSION_STORAGE_KEY, 'demo');
+            currentUser = 'demo';
+            showToast('تم الدخول إلى حساب demo التجريبي!');
+            openDashboard();
+        }
+
+        function handleLogout() {
+            localStorage.removeItem(SESSION_STORAGE_KEY);
+            currentUser = null;
+            draftProfile = null;
+            showToast('تم تسجيل الخروج');
+            showAuthView();
+        }
+
+        function openDashboard() {
+            if (!currentUser) {
+                showAuthView();
+                return;
+            }
+            const db = getUsersDB();
+            const record = db[normalizeUsername(currentUser)];
+            if (!record) {
+                handleLogout();
+                return;
+            }
+
+            draftProfile = JSON.parse(JSON.stringify(record));
+            populateDashboardUI();
+
+            hideAllViews();
+            updateNavbar('dashboard');
+            document.getElementById('dashboardView').classList.remove('hidden');
+        }
+
+        function populateDashboardUI() {
+            const publicUrl = buildProfileUrl(draftProfile.username);
+            activeShareUrl = publicUrl;
+
+            document.getElementById('myPublicUrlInput').value = publicUrl;
+            document.getElementById('loggedUsernameBadge').textContent = '@' + draftProfile.username;
+            document.getElementById('editDisplayName').value = draftProfile.displayName || draftProfile.username;
+            document.getElementById('editBio').value = draftProfile.bio || '';
+
+            const isExternalUrl = draftProfile.avatar && !draftProfile.avatar.startsWith('data:');
+            document.getElementById('editAvatarUrlInput').value = isExternalUrl ? draftProfile.avatar : '';
+
+            renderEditorAvatarThumb();
+            applyThemeSelection(draftProfile.theme || 'ocean');
+            renderEditorLinks();
+            renderLivePreview();
+        }
+
+        function renderEditorAvatarThumb() {
+            const box = document.getElementById('editorAvatarPreviewBox');
+            if (!box) return;
+            if (draftProfile.avatar) {
+                box.innerHTML = `<img src="${escapeHTML(draftProfile.avatar)}" alt="Avatar" class="w-full h-full object-cover" onerror="resetAvatarToInitials()">`;
+            } else {
+                box.textContent = getInitials(draftProfile.displayName, draftProfile.username);
+            }
+        }
+
+        function setEditorTheme(theme) {
+            draftProfile.theme = theme;
+            applyThemeSelection(theme);
+            renderLivePreview();
+        }
+
+        function applyThemeSelection(theme) {
+            document.body.setAttribute('data-theme', theme);
+            document.querySelectorAll('.theme-choice-btn').forEach(btn => {
+                if (btn.getAttribute('data-theme-choice') === theme) {
+                    btn.classList.add('border-sky-400', 'bg-sky-950/70');
+                    btn.classList.remove('border-slate-700', 'bg-slate-900/60');
+                } else {
+                    btn.classList.remove('border-sky-400', 'bg-sky-950/70');
+                    btn.classList.add('border-slate-700', 'bg-slate-900/60');
+                }
+            });
+        }
+
+        function handleAvatarFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const size = 250;
+                    canvas.width = size;
+                    canvas.height = size;
+                    const ctx = canvas.getContext('2d');
+                    const minDim = Math.min(img.width, img.height);
+                    const sx = (img.width - minDim) / 2;
+                    const sy = (img.height - minDim) / 2;
+                    ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, size, size);
+                    draftProfile.avatar = canvas.toDataURL('image/jpeg', 0.84);
+                    document.getElementById('editAvatarUrlInput').value = '';
+                    renderEditorAvatarThumb();
+                    renderLivePreview();
+                    showToast('تم تجهيز الصورة! اضغط حفظ التغييرات لتثبيتها');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function handleAvatarUrlInput(val) {
+            draftProfile.avatar = val.trim();
+            renderEditorAvatarThumb();
+            renderLivePreview();
+        }
+
+        function resetAvatarToInitials() {
+            draftProfile.avatar = '';
+            document.getElementById('editAvatarUrlInput').value = '';
+            renderEditorAvatarThumb();
+            renderLivePreview();
+        }
+
+        function syncLivePreview() {
+            draftProfile.displayName = document.getElementById('editDisplayName').value;
+            draftProfile.bio = document.getElementById('editBio').value;
+            if (!draftProfile.avatar) renderEditorAvatarThumb();
+            renderLivePreview();
+        }
+
+        function renderEditorLinks() {
+            const container = document.getElementById('editorLinksContainer');
+            container.innerHTML = '';
+            if (!draftProfile.links || draftProfile.links.length === 0) {
+                container.innerHTML = `<div class="text-center py-6 text-xs text-sky-200/65 border border-dashed border-sky-500/30 rounded-2xl">لا توجد روابط حالياً. اضغط على "+ إضافة رابط جديد".</div>`;
+                return;
+            }
+            draftProfile.links.forEach((link, idx) => {
+                const item = document.createElement('div');
+                item.className = 'p-3.5 rounded-2xl bg-slate-950/75 border border-sky-500/25 space-y-2.5';
+                const optionsHtml = Object.keys(PLATFORM_ICONS).map(key =>
+                    `<option value="${key}" ${link.icon === key ? 'selected' : ''}>${PLATFORM_ICONS[key].label}</option>`
+                ).join('');
+                item.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-sky-400">رابط #${idx + 1}</span>
+                        <button type="button" onclick="removeEditorLink(${idx})" class="px-2.5 py-1 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/35 text-xs font-bold cursor-pointer">حذف</button>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <input type="text" placeholder="عنوان الرابط" value="${escapeHTML(link.title)}"
+                               oninput="updateEditorLink(${idx}, 'title', this.value)"
+                               class="bg-slate-900 border border-slate-700 focus:border-sky-400 rounded-xl px-3 py-2 text-xs text-white outline-none">
+                        <select onchange="updateEditorLink(${idx}, 'icon', this.value)"
+                                class="bg-slate-900 border border-slate-700 focus:border-sky-400 rounded-xl px-3 py-2 text-xs text-white outline-none">
+                            ${optionsHtml}
+                        </select>
+                    </div>
+                    <input type="url" dir="ltr" placeholder="https://..." value="${escapeHTML(link.url)}"
+                           oninput="updateEditorLink(${idx}, 'url', this.value)"
+                           class="w-full bg-slate-900 border border-slate-700 focus:border-sky-400 rounded-xl px-3 py-2 text-xs text-white outline-none">
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function addEditorLink() {
+            if (!draftProfile.links) draftProfile.links = [];
+            draftProfile.links.push({ title: 'رابط جديد', url: 'https://', icon: 'globe', featured: false });
+            renderEditorLinks();
+            renderLivePreview();
+        }
+
+        function updateEditorLink(idx, field, value) {
+            draftProfile.links[idx][field] = value;
+            renderLivePreview();
+        }
+
+        function removeEditorLink(idx) {
+            draftProfile.links.splice(idx, 1);
+            renderEditorLinks();
+            renderLivePreview();
+        }
+
+        function saveUserProfile() {
+            if (!currentUser || !draftProfile) return;
+            const cleanUser = normalizeUsername(currentUser);
+            const db = getUsersDB();
+            const existing = db[cleanUser] || {};
+
+            const updated = {
+                username: cleanUser,
+                passwordHash: existing.passwordHash || draftProfile.passwordHash,
+                displayName: (draftProfile.displayName || cleanUser).trim(),
+                bio: (draftProfile.bio || '').trim(),
+                avatar: draftProfile.avatar || '',
+                theme: draftProfile.theme || 'ocean',
+                links: (draftProfile.links || []).map(l => ({
+                    title: (l.title || 'رابط').trim(),
+                    url: normalizeUrl(l.url),
+                    icon: PLATFORM_ICONS[l.icon] ? l.icon : 'globe',
+                    featured: Boolean(l.featured)
+                }))
+            };
+
+            db[cleanUser] = updated;
+            saveUsersDB(db);
+            draftProfile = JSON.parse(JSON.stringify(updated));
+            renderLivePreview();
+            showToast('تم حفظ جميع التغييرات بنجاح!');
+        }
+
+        function renderLivePreview() {
+            const previewBody = document.getElementById('livePreviewBody');
+            if (!previewBody || !draftProfile) return;
+            previewBody.innerHTML = buildProfileMarkup(draftProfile, true);
+        }
+
+        function openPublicProfile(username, pushUrl = true) {
+            const cleanUser = normalizeUsername(username);
+            if (!cleanUser) {
+                showAuthView();
+                return;
+            }
+
+            if (pushUrl) {
+                try {
+                    window.history.pushState({ u: cleanUser }, '', buildProfileUrl(cleanUser));
+                } catch (e) {}
+            }
+
+            const db = getUsersDB();
+            const profile = db[cleanUser] || null;
+            activeShareUrl = buildProfileUrl(cleanUser);
+
+            hideAllViews();
+            updateNavbar('public', cleanUser);
+            const publicContainer = document.getElementById('publicProfileContent');
+
+            if (!profile) {
+                document.body.setAttribute('data-theme', 'ocean');
+                publicContainer.innerHTML = `
+                    <div class="glass-panel rounded-3xl p-8 text-center max-w-md w-full mt-6">
+                        <div class="w-16 h-16 rounded-full bg-sky-500/15 border border-sky-400/30 text-sky-400 flex items-center justify-center text-2xl mx-auto mb-4 font-extrabold">?</div>
+                        <h2 class="text-xl font-extrabold text-white mb-2">الحساب غير موجود</h2>
+                        <p class="text-sm text-sky-200/75 mb-5 font-tajawal">لا يوجد مستخدم بالاسم <span dir="ltr" class="font-mono text-sky-300">@${escapeHTML(cleanUser)}</span> في هذا المتصفح حالياً. يمكنك حجز هذا اليوزر الآن مجاناً!</p>
+                        <button type="button" onclick="goHome(event)" class="bg-gradient-to-r from-sky-500 to-blue-600 text-white font-bold px-6 py-2.5 rounded-xl text-sm cursor-pointer">
+                            أنشئ صفحتك مجاناً
+                        </button>
+                    </div>
+                `;
+            } else {
+                document.body.setAttribute('data-theme', profile.theme || 'ocean');
+                publicContainer.innerHTML = buildProfileMarkup(profile, false);
+            }
+
+            document.getElementById('publicProfileView').classList.remove('hidden');
+        }
+
+        function buildProfileMarkup(profile, isCompactPreview) {
+            const initials = getInitials(profile.displayName, profile.username);
+            const sizeClasses = isCompactPreview ? 'w-20 h-20 text-2xl' : 'w-28 h-28 sm:w-32 sm:h-32 text-3xl';
+            const avatarHtml = profile.avatar
+                ? `<img src="${escapeHTML(profile.avatar)}" alt="${escapeHTML(profile.displayName)}" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='${escapeHTML(initials)}'">`
+                : escapeHTML(initials);
+
+            const linksHtml = (profile.links || []).map(link => {
+                const safeUrl = normalizeUrl(link.url);
+                const iconObj = PLATFORM_ICONS[link.icon] || PLATFORM_ICONS.globe;
+                return `
+                    <a href="${escapeHTML(safeUrl)}" target="_blank" rel="noopener noreferrer"
+                       class="link-card group w-full ${isCompactPreview ? 'p-3' : 'p-4'} rounded-2xl flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="${isCompactPreview ? 'w-10 h-10' : 'w-12 h-12'} rounded-xl bg-sky-500/15 border border-sky-400/30 text-sky-400 flex items-center justify-center shrink-0">
+                                ${iconObj.svg}
+                            </div>
+                            <span class="font-bold text-white ${isCompactPreview ? 'text-xs' : 'text-sm sm:text-base'} truncate">${escapeHTML(link.title || 'رابط')}</span>
+                        </div>
+                        <span class="text-sky-300 text-xs">←</span>
+                    </a>
+                `;
+            }).join('');
+
+            return `
+                <div class="relative mb-3.5">
+                    <div class="${sizeClasses} rounded-full overflow-hidden avatar-ring bg-gradient-to-tr from-sky-700 to-blue-500 flex items-center justify-center font-extrabold text-white mx-auto">
+                        ${avatarHtml}
+                    </div>
+                </div>
+                <h1 class="${isCompactPreview ? 'text-lg' : 'text-2xl sm:text-3xl'} font-extrabold text-white mb-1">${escapeHTML(profile.displayName || profile.username)}</h1>
+                <span dir="ltr" class="text-xs font-mono text-sky-300/80 mb-3 block">@${escapeHTML(profile.username)}</span>
+                ${profile.bio ? `<p class="font-tajawal text-sky-100/85 ${isCompactPreview ? 'text-xs' : 'text-sm sm:text-base'} max-w-md leading-relaxed mb-6 px-2">${escapeHTML(profile.bio)}</p>` : ''}
+                <div class="w-full flex flex-col gap-3">
+                    ${linksHtml || '<p class="text-xs text-sky-200/55 py-4">لا توجد روابط مضافة بعد.</p>'}
+                </div>
+            `;
+        }
+
+        function goHome(e) {
+            if (e) e.preventDefault();
+            try {
+                window.history.pushState({}, '', window.location.origin + window.location.pathname);
+            } catch (err) {}
+            if (currentUser) openDashboard();
+            else showAuthView();
+        }
+
+        function handleQuickSearch(e) {
+            e.preventDefault();
+            const val = normalizeUsername(document.getElementById('searchUsernameInput').value);
+            if (val) openPublicProfile(val);
+        }
+
+        function previewMyPublicPage() {
+            if (draftProfile && draftProfile.username) {
+                openPublicProfile(draftProfile.username);
+            }
+        }
+
+        function copyMyPublicLink() {
+            const url = document.getElementById('myPublicUrlInput').value;
+            copyToClipboard(url);
+            showToast('تم نسخ رابط صفحتك العام!');
+        }
+
+        function openQrModal(usernameOverride) {
+            const targetUrl = usernameOverride ? buildProfileUrl(usernameOverride) : activeShareUrl;
+            activeShareUrl = targetUrl;
+            const imgEl = document.getElementById('qrModalImg');
+            const canvasEl = document.getElementById('qrFallbackCanvas');
+            imgEl.classList.remove('hidden');
+            canvasEl.classList.add('hidden');
+            imgEl.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=0369a1&bgcolor=ffffff&data=' + encodeURIComponent(targetUrl);
+            const modal = document.getElementById('qrModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function handleQrFallback() {
+            const imgEl = document.getElementById('qrModalImg');
+            const canvas = document.getElementById('qrFallbackCanvas');
+            imgEl.classList.add('hidden');
+            canvas.classList.remove('hidden');
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, 176, 176);
+            ctx.fillStyle = '#0369a1';
+            ctx.font = 'bold 12px monospace';
+            ctx.fillText('DF LINK QR', 48, 92);
+        }
+
+        function closeQrModal() {
+            const modal = document.getElementById('qrModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function copyShareModalUrl() {
+            copyToClipboard(activeShareUrl);
+            showToast('تم نسخ رابط الصفحة!');
+        }
+
+        function copyToClipboard(text) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); } catch (e) {}
+            document.body.removeChild(ta);
+        }
+
+        function normalizeUrl(url) {
+            if (!url) return '#';
+            const trimmed = url.trim();
+            if (trimmed === '#' || trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('mailto:') || trimmed.startsWith('tel:')) {
+                return trimmed;
+            }
+            return 'https://' + trimmed;
+        }
+
+        function escapeHTML(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>'"]/g, tag => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+            }[tag]));
+        }
+
+        let toastTimer;
+        function showToast(msg, isError) {
+            const box = document.getElementById('toastBox');
+            const icon = document.getElementById('toastIcon');
+            document.getElementById('toastText').textContent = msg;
+            icon.className = isError ? 'w-2.5 h-2.5 rounded-full bg-red-400' : 'w-2.5 h-2.5 rounded-full bg-sky-400';
+            box.classList.remove('opacity-0', '-translate-y-3');
+            box.classList.add('opacity-100', 'translate-y-0');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                box.classList.add('opacity-0', '-translate-y-3');
+                box.classList.remove('opacity-100', 'translate-y-0');
+            }, 3000);
+        }
+
+        window.addEventListener('popstate', () => {
+            const params = new URLSearchParams(window.location.search);
+            const u = params.get('u');
+            if (u) openPublicProfile(u, false);
+            else if (currentUser) openDashboard();
+            else showAuthView();
+        });
+
+        document.getElementById('qrModal').addEventListener('click', function(e) {
+            if (e.target === this) closeQrModal();
+        });
+
+        (async function init() {
+            await ensureDefaultDemoUser();
+            const savedUser = normalizeUsername(localStorage.getItem(SESSION_STORAGE_KEY));
+            if (savedUser && getUsersDB()[savedUser]) {
+                currentUser = savedUser;
+            }
+            const params = new URLSearchParams(window.location.search);
+            const targetUser = params.get('u');
+            if (targetUser) {
+                openPublicProfile(targetUser, false);
+            } else if (currentUser) {
+                openDashboard();
+            } else {
+                showAuthView();
+            }
+        })();
+    </script>
+</body>
+</html>
