@@ -766,8 +766,8 @@
           v: profile.verified ? 1 : 0,
           m: profile.mode,
           t: profile.theme,
-          av: av.length < 12000 ? av : '',
-          bn: bn.length < 18000 ? bn : '',
+          av: av.length < 28000 ? av : '',
+          bn: bn.length < 36000 ? bn : '',
           l: (profile.links || []).map(x => [x.platform, x.title, x.url])
         };
         const json = JSON.stringify(minimal);
@@ -808,7 +808,7 @@
       if (binId) url.searchParams.set('bin', binId);
       if (profileObj) {
         const packed = encodeProfilePayload(profileObj);
-        if (packed && packed.length < 32000) {
+        if (packed && packed.length < 65000) {
           url.searchParams.set('p', packed);
         }
       }
@@ -1264,13 +1264,13 @@
         const img = new Image();
         img.onload = function () {
           const canvas = document.createElement('canvas');
-          const maxW = type === 'banner' ? 720 : 240;
+          const maxW = type === 'banner' ? 420 : 160;
           const scale = Math.min(1, maxW / img.width);
-          canvas.width = img.width * scale;
-          canvas.height = img.height * scale;
+          canvas.width = Math.max(1, Math.round(img.width * scale));
+          canvas.height = Math.max(1, Math.round(img.height * scale));
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          const compressed = canvas.toDataURL('image/jpeg', 0.72);
+          const compressed = canvas.toDataURL('image/jpeg', 0.62);
 
           if (type === 'banner') {
             draftProfile.banner = compressed;
@@ -1332,36 +1332,39 @@
       }
     }
 
+    // Stacked vertical layout for each link row so elements never crowd horizontally
     function renderLinksEditor() {
       const container = document.getElementById('linksEditorContainer');
       const links = draftProfile.links || [];
       container.innerHTML = links.map((link, idx) => {
         const currentPlat = PLATFORMS.find(p => p.id === link.platform) || PLATFORMS[PLATFORMS.length - 1];
         return `
-          <div class="p-3.5 rounded-2xl border border-white/10 space-y-2.5" style="background: var(--surface-subtle);">
-            <div class="flex items-center gap-2">
-              <div class="w-9 h-9 rounded-xl accent-badge flex items-center justify-center shrink-0">
-                ${currentPlat.icon}
+          <div class="p-4 rounded-2xl border border-white/10 space-y-2.5" style="background: var(--surface-subtle);">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2 min-w-0 flex-1">
+                <div class="w-9 h-9 rounded-xl accent-badge flex items-center justify-center shrink-0">
+                  ${currentPlat.icon}
+                </div>
+                <select onchange="updateLinkField(${idx}, 'platform', this.value); renderLinksEditor();" class="input-field rounded-xl px-3 py-2 text-xs font-bold flex-1 min-w-0">
+                  ${PLATFORMS.map(p => `<option value="${p.id}" ${link.platform === p.id ? 'selected' : ''}>${p.label}</option>`).join('')}
+                </select>
               </div>
-              <select onchange="updateLinkField(${idx}, 'platform', this.value); renderLinksEditor();" class="input-field rounded-xl px-2.5 py-2 text-xs font-bold max-w-[130px]">
-                ${PLATFORMS.map(p => `<option value="${p.id}" ${link.platform === p.id ? 'selected' : ''}>${p.label}</option>`).join('')}
-              </select>
-              <input
-                type="text"
-                value="${escapeHTML(link.title)}"
-                oninput="updateLinkField(${idx}, 'title', this.value)"
-                placeholder="${currentLang === 'ar' ? 'عنوان الرابط' : 'Link Title'}"
-                class="input-field flex-1 min-w-0 rounded-xl px-3 py-2 text-xs font-bold"
-              />
               <button type="button" onclick="removeLinkRow(${idx})" class="w-8 h-8 rounded-xl bg-rose-500/15 text-rose-400 font-bold text-xs hover:bg-rose-500/25 shrink-0">✕</button>
             </div>
+            <input
+              type="text"
+              value="${escapeHTML(link.title)}"
+              oninput="updateLinkField(${idx}, 'title', this.value)"
+              placeholder="${currentLang === 'ar' ? 'عنوان الرابط (مثلاً: حسابي على تيك توك)' : 'Link Title'}"
+              class="input-field w-full rounded-xl px-3.5 py-2.5 text-xs font-bold"
+            />
             <input
               type="url"
               dir="ltr"
               value="${escapeHTML(link.url)}"
               oninput="updateLinkField(${idx}, 'url', this.value)"
               placeholder="https://..."
-              class="input-field w-full rounded-xl px-3 py-2 text-xs"
+              class="input-field w-full rounded-xl px-3.5 py-2.5 text-xs"
             />
           </div>
         `;
@@ -1427,7 +1430,7 @@
     async function openPublicProfile(username, directProfileObj = null, binParam = null, packedParam = null) {
       hideAllViews();
       const cleanUser = normalizeUsername(username);
-      let profile = directProfileObj;
+      let profile = directProfileObj ? JSON.parse(JSON.stringify(directProfileObj)) : null;
 
       if (!profile && currentUser && normalizeUsername(currentUser.username) === cleanUser) {
         profile = JSON.parse(JSON.stringify(currentUser));
@@ -1435,13 +1438,21 @@
 
       if (!profile) {
         const db = loadLocalUsers();
-        profile = db[cleanUser] || null;
+        if (db[cleanUser]) {
+          profile = JSON.parse(JSON.stringify(db[cleanUser]));
+        }
       }
 
       if (binParam) {
         const cloudDb = await fetchFromCloud(binParam);
         if (cloudDb && cloudDb[cleanUser]) {
-          profile = cloudDb[cleanUser];
+          const cloudUser = JSON.parse(JSON.stringify(cloudDb[cleanUser]));
+          profile = profile ? {
+            ...profile,
+            ...cloudUser,
+            avatar: cloudUser.avatar || profile.avatar || '',
+            banner: cloudUser.banner || profile.banner || ''
+          } : cloudUser;
           const db = loadLocalUsers();
           db[cleanUser] = profile;
           saveLocalUsers(db);
