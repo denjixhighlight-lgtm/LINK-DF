@@ -755,63 +755,13 @@
       }, 3000);
     }
 
-    function encodeProfilePayload(profile) {
-      try {
-        const av = profile.avatar || '';
-        const bn = profile.banner || '';
-        const minimal = {
-          u: profile.username,
-          n: profile.displayName,
-          b: profile.bio,
-          v: profile.verified ? 1 : 0,
-          m: profile.mode,
-          t: profile.theme,
-          av: av.length < 28000 ? av : '',
-          bn: bn.length < 36000 ? bn : '',
-          l: (profile.links || []).map(x => [x.platform, x.title, x.url])
-        };
-        const json = JSON.stringify(minimal);
-        return btoa(unescape(encodeURIComponent(json)));
-      } catch (e) {
-        return '';
-      }
-    }
-
-    function decodeProfilePayload(encoded) {
-      try {
-        if (!encoded) return null;
-        const json = decodeURIComponent(escape(atob(encoded)));
-        const d = JSON.parse(json);
-        return {
-          username: d.u,
-          displayName: d.n || d.u,
-          bio: d.b || '',
-          verified: Boolean(d.v),
-          mode: d.m || 'night',
-          theme: d.t || 'ocean',
-          avatar: d.av || '',
-          banner: d.bn || '',
-          links: Array.isArray(d.l)
-            ? d.l.map(item => ({ platform: item[0] || 'website', title: item[1] || '', url: item[2] || '' }))
-            : []
-        };
-      } catch (e) {
-        return null;
-      }
-    }
-
-    function buildPublicShareUrl(username, profileObj) {
+    // Keep share URL clean and short so browsers never trigger 414 URI Too Long
+    function buildPublicShareUrl(username) {
       const base = window.location.origin + window.location.pathname;
       const url = new URL(base);
-      url.searchParams.set('u', username);
+      url.searchParams.set('u', normalizeUsername(username));
       const binId = localStorage.getItem(STORAGE_KEYS.CLOUD_BIN);
       if (binId) url.searchParams.set('bin', binId);
-      if (profileObj) {
-        const packed = encodeProfilePayload(profileObj);
-        if (packed && packed.length < 65000) {
-          url.searchParams.set('p', packed);
-        }
-      }
       return url.toString();
     }
 
@@ -1033,7 +983,6 @@
       const url = new URL(window.location.href);
       url.searchParams.delete('u');
       url.searchParams.delete('bin');
-      url.searchParams.delete('p');
       window.history.replaceState({}, '', url.pathname);
 
       if (currentUser) {
@@ -1210,7 +1159,7 @@
 
     function updateShareUrlDisplay() {
       if (!draftProfile) return;
-      const shareUrl = buildPublicShareUrl(draftProfile.username, draftProfile);
+      const shareUrl = buildPublicShareUrl(draftProfile.username);
       document.getElementById('publicShareUrlBox').textContent = shareUrl;
       document.getElementById('qrUrlText').textContent = shareUrl;
     }
@@ -1264,13 +1213,13 @@
         const img = new Image();
         img.onload = function () {
           const canvas = document.createElement('canvas');
-          const maxW = type === 'banner' ? 420 : 160;
+          const maxW = type === 'banner' ? 480 : 180;
           const scale = Math.min(1, maxW / img.width);
           canvas.width = Math.max(1, Math.round(img.width * scale));
           canvas.height = Math.max(1, Math.round(img.height * scale));
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          const compressed = canvas.toDataURL('image/jpeg', 0.62);
+          const compressed = canvas.toDataURL('image/jpeg', 0.65);
 
           if (type === 'banner') {
             draftProfile.banner = compressed;
@@ -1279,7 +1228,6 @@
             draftProfile.avatar = compressed;
             renderAvatarPreview();
           }
-          updateShareUrlDisplay();
         };
         img.src = e.target.result;
       };
@@ -1295,21 +1243,18 @@
         draftProfile.avatar = clean;
         renderAvatarPreview();
       }
-      updateShareUrlDisplay();
     }
 
     function removeBanner() {
       draftProfile.banner = '';
       document.getElementById('bannerUrlInput').value = '';
       renderBannerPreview();
-      updateShareUrlDisplay();
     }
 
     function resetAvatar() {
       draftProfile.avatar = '';
       document.getElementById('avatarUrlInput').value = '';
       renderAvatarPreview();
-      updateShareUrlDisplay();
     }
 
     function renderBannerPreview() {
@@ -1332,7 +1277,6 @@
       }
     }
 
-    // Stacked vertical layout for each link row so elements never crowd horizontally
     function renderLinksEditor() {
       const container = document.getElementById('linksEditorContainer');
       const links = draftProfile.links || [];
@@ -1427,7 +1371,7 @@
       openPublicProfile(target);
     }
 
-    async function openPublicProfile(username, directProfileObj = null, binParam = null, packedParam = null) {
+    async function openPublicProfile(username, directProfileObj = null, binParam = null) {
       hideAllViews();
       const cleanUser = normalizeUsername(username);
       let profile = directProfileObj ? JSON.parse(JSON.stringify(directProfileObj)) : null;
@@ -1456,18 +1400,6 @@
           const db = loadLocalUsers();
           db[cleanUser] = profile;
           saveLocalUsers(db);
-        }
-      }
-
-      if (packedParam) {
-        const decoded = decodeProfilePayload(packedParam);
-        if (decoded && normalizeUsername(decoded.username) === cleanUser) {
-          profile = profile ? {
-            ...profile,
-            ...decoded,
-            avatar: decoded.avatar || profile.avatar || '',
-            banner: decoded.banner || profile.banner || ''
-          } : decoded;
         }
       }
 
@@ -1561,7 +1493,7 @@
     function getActiveShareUrl() {
       const targetProfile = draftProfile || window.__activePublicProfile || currentUser;
       if (!targetProfile) return window.location.href;
-      return buildPublicShareUrl(targetProfile.username, targetProfile);
+      return buildPublicShareUrl(targetProfile.username);
     }
 
     function copyShareUrl() {
@@ -1620,10 +1552,9 @@
       const params = new URLSearchParams(window.location.search);
       const targetUser = normalizeUsername(params.get('u'));
       const binParam = params.get('bin') || localStorage.getItem(STORAGE_KEYS.CLOUD_BIN);
-      const packedParam = params.get('p');
 
       if (targetUser) {
-        await openPublicProfile(targetUser, null, binParam, packedParam);
+        await openPublicProfile(targetUser, null, binParam);
       } else if (currentUser) {
         showDashboard();
       } else {
