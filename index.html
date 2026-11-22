@@ -783,23 +783,21 @@
     }
 
     function getCleanSiteBaseUrl() {
-      let pathname = window.location.pathname || '/';
-      if (!pathname.endsWith('/')) {
-        const lastSlash = pathname.lastIndexOf('/');
-        const lastSegment = pathname.slice(lastSlash + 1);
-        if (lastSegment.includes('.')) {
-          pathname = pathname.slice(0, lastSlash + 1);
-        } else {
-          pathname = pathname + '/';
-        }
-      }
-      return `${window.location.origin}${pathname}`;
+      return window.location.href.split('?')[0].split('#')[0];
+    }
+
+    function extractBinIdFromResponse(data) {
+      if (!data || typeof data !== 'object') return '';
+      if (data.metadata && data.metadata.id) return String(data.metadata.id).trim();
+      if (data.id) return String(data.id).trim();
+      return '';
     }
 
     function buildPublicShareUrl(username, binIdOverride = null) {
       const cleanBase = getCleanSiteBaseUrl();
       const cleanUser = normalizeUsername(username);
-      const binId = binIdOverride || localStorage.getItem(STORAGE_KEYS.CLOUD_BIN) || '';
+      const urlBinParam = new URLSearchParams(window.location.search).get('bin');
+      const binId = String(binIdOverride || localStorage.getItem(STORAGE_KEYS.CLOUD_BIN) || urlBinParam || '').trim();
       const params = new URLSearchParams();
       params.set('u', cleanUser);
       if (binId) {
@@ -894,8 +892,8 @@
         const bn = u.banner || '';
         safe[k] = {
           ...u,
-          avatar: av.length < 95000 ? av : '',
-          banner: bn.length < 110000 ? bn : ''
+          avatar: av.length < 180000 ? av : '',
+          banner: bn.length < 220000 ? bn : ''
         };
       });
       return safe;
@@ -905,7 +903,7 @@
       const badge = document.getElementById('syncStatusBadge');
       if (badge) badge.textContent = currentLang === 'ar' ? 'جاري الرفع لـ JSONBin...' : 'Syncing JSONBin...';
       try {
-        let binId = localStorage.getItem(STORAGE_KEYS.CLOUD_BIN);
+        let binId = String(localStorage.getItem(STORAGE_KEYS.CLOUD_BIN) || '').trim();
         const payload = buildCloudSafeDb(db);
 
         if (!binId) {
@@ -920,14 +918,15 @@
           });
           if (res.ok) {
             const data = await res.json();
-            if (data && data.metadata && data.metadata.id) {
-              binId = data.metadata.id;
+            const createdId = extractBinIdFromResponse(data);
+            if (createdId) {
+              binId = createdId;
               localStorage.setItem(STORAGE_KEYS.CLOUD_BIN, binId);
-              updateShareUrlDisplay();
+              updateShareUrlDisplay(binId);
             }
           }
         } else {
-          await fetch(`${JSONBIN_BASE}/${binId}`, {
+          const putRes = await fetch(`${JSONBIN_BASE}/${binId}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
@@ -935,6 +934,26 @@
             },
             body: JSON.stringify(payload)
           });
+          if (!putRes.ok && putRes.status === 404) {
+            const retryPost = await fetch(JSONBIN_BASE, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Master-Key': JSONBIN_API_KEY,
+                'X-Bin-Name': 'DFLINK_PROFILES'
+              },
+              body: JSON.stringify(payload)
+            });
+            if (retryPost.ok) {
+              const data = await retryPost.json();
+              const createdId = extractBinIdFromResponse(data);
+              if (createdId) {
+                binId = createdId;
+                localStorage.setItem(STORAGE_KEYS.CLOUD_BIN, binId);
+                updateShareUrlDisplay(binId);
+              }
+            }
+          }
         }
 
         if (badge) {
@@ -945,14 +964,15 @@
         return binId;
       } catch (err) {
         if (badge) badge.textContent = currentLang === 'ar' ? 'محفوظ محلياً' : 'Saved Locally';
-        return localStorage.getItem(STORAGE_KEYS.CLOUD_BIN);
+        return String(localStorage.getItem(STORAGE_KEYS.CLOUD_BIN) || '').trim();
       }
     }
 
     async function fetchFromCloud(binId) {
-      if (!binId) return null;
+      const cleanBin = String(binId || '').trim();
+      if (!cleanBin) return null;
       try {
-        const res = await fetch(`${JSONBIN_BASE}/${binId}/latest`, {
+        const res = await fetch(`${JSONBIN_BASE}/${cleanBin}/latest`, {
           headers: { 'X-Master-Key': JSONBIN_API_KEY }
         });
         if (!res.ok) return null;
@@ -1228,7 +1248,7 @@
     // ==========================================
     // DASHBOARD EDITOR
     // ==========================================
-    function showDashboard() {
+    async function showDashboard() {
       if (!currentUser) {
         showAuthView();
         return;
@@ -1253,12 +1273,17 @@
       renderLinksEditor();
 
       document.getElementById('dashboardView').classList.remove('hidden');
+
+      if (!localStorage.getItem(STORAGE_KEYS.CLOUD_BIN)) {
+        const db = loadLocalUsers();
+        await syncToCloud(db);
+      }
     }
 
-    function updateShareUrlDisplay() {
+    function updateShareUrlDisplay(binIdOverride = null) {
       const target = draftProfile || window.__activePublicProfile || currentUser;
       if (!target) return;
-      const shareUrl = buildPublicShareUrl(target.username);
+      const shareUrl = buildPublicShareUrl(target.username, binIdOverride);
       const box = document.getElementById('publicShareUrlBox');
       if (box) box.textContent = shareUrl;
       const qrText = document.getElementById('qrUrlText');
@@ -1454,8 +1479,8 @@
       localStorage.setItem(STORAGE_KEYS.CURRENT_USER, currentUser.username);
 
       renderAvatarPreview();
-      await syncToCloud(db);
-      updateShareUrlDisplay();
+      const syncedBin = await syncToCloud(db);
+      updateShareUrlDisplay(syncedBin);
       showToast(t('toastSaved'));
     }
 
@@ -1489,8 +1514,11 @@
         profile = JSON.parse(JSON.stringify(db[cleanUser]));
       }
 
-      const activeBin = binParam || localStorage.getItem(STORAGE_KEYS.CLOUD_BIN);
+      const activeBin = String(binParam || localStorage.getItem(STORAGE_KEYS.CLOUD_BIN) || '').trim();
       if (activeBin) {
+        if (binParam) {
+          localStorage.setItem(STORAGE_KEYS.CLOUD_BIN, activeBin);
+        }
         const cloudDb = await fetchFromCloud(activeBin);
         if (cloudDb && cloudDb[cleanUser]) {
           const cloudUser = JSON.parse(JSON.stringify(cloudDb[cleanUser]));
@@ -1502,9 +1530,6 @@
           };
           db[cleanUser] = profile;
           saveLocalUsers(db);
-          if (binParam) {
-            localStorage.setItem(STORAGE_KEYS.CLOUD_BIN, binParam);
-          }
         }
       }
 
@@ -1528,7 +1553,7 @@
       }
 
       window.__activePublicProfile = profile;
-      updateShareUrlDisplay();
+      updateShareUrlDisplay(activeBin || null);
       applyTheme(profile.mode, profile.theme);
       updateNavbar('public');
 
@@ -1657,7 +1682,7 @@
       if (targetUser) {
         await openPublicProfile(targetUser, null, binParam);
       } else if (currentUser) {
-        showDashboard();
+        await showDashboard();
       } else {
         showAuthView();
       }
