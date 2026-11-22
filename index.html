@@ -650,7 +650,7 @@
         qrDesc: 'امسح الرمز بكاميرا الهاتف لفتح صفحتك مباشرة',
         qrCopy: 'نسخ رابط الصفحة',
         toastSaved: 'تم حفظ التغييرات ورفعها لـ JSONBin! ✨',
-        toastCopied: 'تم نسخ رابط صفحتك بنجاح! 📋',
+        toastCopied: 'تم نسخ رابط صفحتك الكامل تلقائياً! 📋',
         toastCreated: 'تم إنشاء حسابك بنجاح! 🎉',
         toastWelcome: 'مرحباً بعودتك! 👋',
         errInvalidUser: 'اسم المستخدم يجب أن يكون 3 أحرف على الأقل (حروف إنجليزية، أرقام، أو _).',
@@ -712,7 +712,7 @@
         qrDesc: 'Scan with phone camera to open your public page directly',
         qrCopy: 'Copy Page Link',
         toastSaved: 'Saved & synced to JSONBin! ✨',
-        toastCopied: 'Profile link copied to clipboard! 📋',
+        toastCopied: 'Full profile link copied automatically! 📋',
         toastCreated: 'Account created successfully! 🎉',
         toastWelcome: 'Welcome back! 👋',
         errInvalidUser: 'Username must be at least 3 chars (letters, numbers, _).',
@@ -735,7 +735,7 @@
     let toastTimer = null;
 
     // ==========================================
-    // HELPERS
+    // HELPERS & BASE SITE ROOT
     // ==========================================
     function t(key) {
       return (I18N[currentLang] && I18N[currentLang][key]) || I18N.ar[key] || key;
@@ -782,15 +782,62 @@
       eyeClosed.classList.toggle('hidden', isHidden);
     }
 
-    function buildPublicShareUrl(username, binIdOverride = null) {
-      const base = window.location.origin + window.location.pathname;
-      const url = new URL(base);
-      url.searchParams.set('u', normalizeUsername(username));
-      const binId = binIdOverride || localStorage.getItem(STORAGE_KEYS.CLOUD_BIN);
-      if (binId) {
-        url.searchParams.set('bin', binId);
+    function getCleanSiteBaseUrl() {
+      let pathname = window.location.pathname || '/';
+      if (!pathname.endsWith('/')) {
+        const lastSlash = pathname.lastIndexOf('/');
+        const lastSegment = pathname.slice(lastSlash + 1);
+        if (lastSegment.includes('.')) {
+          pathname = pathname.slice(0, lastSlash + 1);
+        } else {
+          pathname = pathname + '/';
+        }
       }
-      return url.toString();
+      return `${window.location.origin}${pathname}`;
+    }
+
+    function buildPublicShareUrl(username, binIdOverride = null) {
+      const cleanBase = getCleanSiteBaseUrl();
+      const cleanUser = normalizeUsername(username);
+      const binId = binIdOverride || localStorage.getItem(STORAGE_KEYS.CLOUD_BIN) || '';
+      const params = new URLSearchParams();
+      params.set('u', cleanUser);
+      if (binId) {
+        params.set('bin', binId);
+      }
+      return `${cleanBase}?${params.toString()}`;
+    }
+
+    function copyTextToClipboard(text, onSuccess) {
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => {
+          if (onSuccess) onSuccess();
+        }).catch(() => {
+          fallbackCopyText(text, onSuccess);
+        });
+      } else {
+        fallbackCopyText(text, onSuccess);
+      }
+    }
+
+    function fallbackCopyText(text, onSuccess) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.top = '0';
+      ta.style.left = '0';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      try {
+        document.execCommand('copy');
+      } catch (e) {
+        console.warn('Copy fallback error:', e);
+      }
+      document.body.removeChild(ta);
+      if (onSuccess) onSuccess();
     }
 
     // ==========================================
@@ -1034,7 +1081,7 @@
 
     function goHome(e) {
       if (e) e.preventDefault();
-      window.history.replaceState({}, '', window.location.pathname);
+      window.history.replaceState({}, '', getCleanSiteBaseUrl());
 
       if (currentUser) {
         showDashboard();
@@ -1209,10 +1256,13 @@
     }
 
     function updateShareUrlDisplay() {
-      if (!draftProfile) return;
-      const shareUrl = buildPublicShareUrl(draftProfile.username);
-      document.getElementById('publicShareUrlBox').textContent = shareUrl;
-      document.getElementById('qrUrlText').textContent = shareUrl;
+      const target = draftProfile || window.__activePublicProfile || currentUser;
+      if (!target) return;
+      const shareUrl = buildPublicShareUrl(target.username);
+      const box = document.getElementById('publicShareUrlBox');
+      if (box) box.textContent = shareUrl;
+      const qrText = document.getElementById('qrUrlText');
+      if (qrText) qrText.textContent = shareUrl;
     }
 
     function selectMode(mode) {
@@ -1478,6 +1528,7 @@
       }
 
       window.__activePublicProfile = profile;
+      updateShareUrlDisplay();
       applyTheme(profile.mode, profile.theme);
       updateNavbar('public');
 
@@ -1535,7 +1586,10 @@
           </div>
         </div>
 
-        <div class="mt-5 text-center">
+        <div class="mt-5 flex items-center justify-center gap-2">
+          <button type="button" onclick="copyShareUrl()" class="glow-btn px-4 py-2 rounded-xl text-xs font-extrabold transition-all">
+            ${t('copyLink')}
+          </button>
           <button type="button" onclick="openQrModal()" class="px-4 py-2 rounded-xl text-xs font-bold border border-white/15 hover:border-sky-400 transition-all">
             ${t('qrBtn')}
           </button>
@@ -1547,23 +1601,15 @@
 
     function getActiveShareUrl() {
       const targetProfile = draftProfile || window.__activePublicProfile || currentUser;
-      if (!targetProfile) return window.location.href;
+      if (!targetProfile) {
+        return `${getCleanSiteBaseUrl()}`;
+      }
       return buildPublicShareUrl(targetProfile.username);
     }
 
     function copyShareUrl() {
       const url = getActiveShareUrl();
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(url).then(() => showToast(t('toastCopied')));
-      } else {
-        const tmp = document.createElement('input');
-        tmp.value = url;
-        document.body.appendChild(tmp);
-        tmp.select();
-        document.execCommand('copy');
-        document.body.removeChild(tmp);
-        showToast(t('toastCopied'));
-      }
+      copyTextToClipboard(url, () => showToast(t('toastCopied')));
     }
 
     function openQrModal() {
