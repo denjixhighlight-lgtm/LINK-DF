@@ -348,7 +348,7 @@
     <div class="glass-panel rounded-3xl p-5 sm:p-6">
       <div class="flex items-center justify-between gap-2 mb-3">
         <span id="shareCardTitle" class="text-xs sm:text-sm font-bold opacity-85">رابط صفحتك العام للمشاركة في البايو:</span>
-        <span id="syncStatusBadge" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full accent-badge">متزامن</span>
+        <span id="syncStatusBadge" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full accent-badge">جاهز للمشاركة</span>
       </div>
 
       <div dir="ltr" class="input-field rounded-xl px-3.5 py-2.5 text-xs font-mono truncate mb-3 select-all" id="publicShareUrlBox"></div>
@@ -397,11 +397,11 @@
         <!-- Banner Upload / URL -->
         <div class="p-4 rounded-2xl border border-white/10 space-y-3" style="background: var(--surface-subtle);">
           <div class="flex items-center justify-between">
-            <label id="bannerLabel" class="text-xs font-bold">بنر علوي مندمج مع الثيم (يظهر للزوار)</label>
+            <label id="bannerLabel" class="text-xs font-bold">بنر علوي مندمج مع الثيم</label>
             <button type="button" onclick="removeBanner()" id="removeBannerBtn" class="text-[11px] text-rose-400 font-bold hover:underline">إزالة البنر</button>
           </div>
           <div id="editorBannerPreview" class="w-full h-28 rounded-xl overflow-hidden flex items-center justify-center text-xs opacity-60 border border-dashed border-white/20">
-            لا يوجد بنر مضاف — يمكنك رفع صورة أو لصق رابط
+            لا يوجد بنر مضاف — يمكنك رفع صورة أو لصق رابط مباشر
           </div>
           <div class="flex flex-col sm:flex-row gap-2">
             <label class="py-2.5 px-3 rounded-xl text-xs font-bold text-center cursor-pointer border border-white/15 hover:border-sky-400 transition-all shrink-0">
@@ -415,7 +415,7 @@
         <!-- Avatar Upload / URL -->
         <div class="p-4 rounded-2xl border border-white/10 space-y-3" style="background: var(--surface-subtle);">
           <div class="flex items-center justify-between">
-            <label id="avatarLabel" class="text-xs font-bold">الصورة الشخصية (تظهر للزوار)</label>
+            <label id="avatarLabel" class="text-xs font-bold">الصورة الشخصية</label>
             <button type="button" onclick="resetAvatar()" id="removeAvatarBtn" class="text-[11px] text-rose-400 font-bold hover:underline">حذف الصورة</button>
           </div>
           <div class="flex items-center gap-3">
@@ -535,14 +535,10 @@
     // CONFIG & STORAGE KEYS
     // ==========================================
     const STORAGE_KEYS = {
-      CURRENT_USER: 'dflink_session_user_v2',
-      USERS_DB: 'dflink_users_db_v2',
-      CLOUD_BIN: 'dflink_cloud_bin_id_v2',
-      LANG: 'dflink_lang_v2'
+      CURRENT_USER: 'dflink_session_user_v3',
+      USERS_DB: 'dflink_users_db_v3',
+      LANG: 'dflink_lang_v3'
     };
-
-    const JSONBIN_API_KEY = '$2a$10$8vK9xLq2mP5nR7wT1yZ3uO6aB4cD8eF0gH2jK4lM6nP8qR0sT2uV4';
-    const JSONBIN_BASE = 'https://api.jsonbin.io/v3/b';
 
     const THEMES = [
       { id: 'ocean', ar: 'أزرق محيطي', en: 'Ocean Blue', color: '#0ea5e9' },
@@ -609,10 +605,10 @@
         modeNight: '🌙 ثيم ليلي متوهج',
         modeMorning: '☀️ ثيم صباحي مضيء',
         accentLabel: 'اختر لون التوهج المضيء (9 ألوان)',
-        bannerLabel: 'بنر علوي مندمج مع الثيم (يظهر للزوار)',
+        bannerLabel: 'بنر علوي مندمج مع الثيم',
         removeBanner: 'إزالة البنر',
         uploadBanner: 'رفع بنر من الجهاز',
-        avatarLabel: 'الصورة الشخصية (تظهر للزوار)',
+        avatarLabel: 'الصورة الشخصية',
         removeAvatar: 'حذف الصورة',
         uploadAvatar: 'رفع صورة من الجهاز',
         displayNameLabel: 'الاسم المعروض',
@@ -755,18 +751,71 @@
       }, 3000);
     }
 
-    // Keep share URL clean and short so browsers never trigger 414 URI Too Long
-    function buildPublicShareUrl(username) {
+    function encodeLightProfileHash(profile) {
+      try {
+        const av = /^https?:\/\//i.test(profile.avatar || '') ? profile.avatar : '';
+        const bn = /^https?:\/\//i.test(profile.banner || '') ? profile.banner : '';
+        const payload = {
+          u: profile.username,
+          n: profile.displayName || profile.username,
+          b: profile.bio || '',
+          v: profile.verified ? 1 : 0,
+          m: profile.mode || 'night',
+          t: profile.theme || 'ocean',
+          av,
+          bn,
+          l: (profile.links || []).map(x => [x.platform || 'website', x.title || '', x.url || ''])
+        };
+        return btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+      } catch (e) {
+        return '';
+      }
+    }
+
+    function decodeLightProfileHash(hashStr) {
+      try {
+        if (!hashStr || !hashStr.includes('d=')) return null;
+        const raw = hashStr.replace(/^#/, '');
+        const params = new URLSearchParams(raw);
+        const encoded = params.get('d');
+        if (!encoded) return null;
+        const json = decodeURIComponent(escape(atob(encoded)));
+        const d = JSON.parse(json);
+        return {
+          username: normalizeUsername(d.u),
+          displayName: d.n || d.u,
+          bio: d.b || '',
+          verified: Boolean(d.v),
+          mode: d.m || 'night',
+          theme: d.t || 'ocean',
+          avatar: d.av || '',
+          banner: d.bn || '',
+          links: Array.isArray(d.l)
+            ? d.l.map(item => ({ platform: item[0] || 'website', title: item[1] || '', url: item[2] || '' }))
+            : []
+        };
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // Short & reliable link: query has only ?u=username, optional lightweight hash #d=...
+    function buildPublicShareUrl(username, profileObj = null) {
       const base = window.location.origin + window.location.pathname;
       const url = new URL(base);
       url.searchParams.set('u', normalizeUsername(username));
-      const binId = localStorage.getItem(STORAGE_KEYS.CLOUD_BIN);
-      if (binId) url.searchParams.set('bin', binId);
+      const src = profileObj || (usersCache && usersCache[normalizeUsername(username)]);
+      if (src) {
+        const enc = encodeLightProfileHash(src);
+        if (enc && enc.length < 4000) {
+          url.hash = 'd=' + enc;
+        }
+      }
       return url.toString();
     }
 
     // ==========================================
-    // DATABASE & CLOUD SYNC
+    // LOCAL DATABASE
     // ==========================================
     function getDefaultDemoUser() {
       return {
@@ -805,60 +854,10 @@
       usersCache = db;
       try {
         localStorage.setItem(STORAGE_KEYS.USERS_DB, JSON.stringify(db));
+        const badge = document.getElementById('syncStatusBadge');
+        if (badge) badge.textContent = currentLang === 'ar' ? 'محفوظ ✓' : 'Saved ✓';
       } catch (e) {
         console.warn('LocalStorage quota warning:', e);
-      }
-    }
-
-    async function syncToCloud(db) {
-      const badge = document.getElementById('syncStatusBadge');
-      if (badge) badge.textContent = currentLang === 'ar' ? 'جاري المزامنة...' : 'Syncing...';
-      try {
-        let binId = localStorage.getItem(STORAGE_KEYS.CLOUD_BIN);
-        if (!binId) {
-          const res = await fetch(JSONBIN_BASE, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Master-Key': JSONBIN_API_KEY,
-              'X-Bin-Name': 'DFLINK_USERS'
-            },
-            body: JSON.stringify(db)
-          });
-          if (res.ok) {
-            const data = await res.json();
-            if (data && data.metadata && data.metadata.id) {
-              binId = data.metadata.id;
-              localStorage.setItem(STORAGE_KEYS.CLOUD_BIN, binId);
-            }
-          }
-        } else {
-          await fetch(`${JSONBIN_BASE}/${binId}`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Master-Key': JSONBIN_API_KEY
-            },
-            body: JSON.stringify(db)
-          });
-        }
-        if (badge) badge.textContent = currentLang === 'ar' ? 'متزامن سحابياً ✓' : 'Synced ✓';
-      } catch (err) {
-        if (badge) badge.textContent = currentLang === 'ar' ? 'محفوظ محلياً ✓' : 'Saved Locally ✓';
-      }
-    }
-
-    async function fetchFromCloud(binId) {
-      if (!binId) return null;
-      try {
-        const res = await fetch(`${JSONBIN_BASE}/${binId}/latest`, {
-          headers: { 'X-Master-Key': JSONBIN_API_KEY }
-        });
-        if (!res.ok) return null;
-        const data = await res.json();
-        return data && data.record ? data.record : null;
-      } catch (e) {
-        return null;
       }
     }
 
@@ -980,10 +979,7 @@
 
     function goHome(e) {
       if (e) e.preventDefault();
-      const url = new URL(window.location.href);
-      url.searchParams.delete('u');
-      url.searchParams.delete('bin');
-      window.history.replaceState({}, '', url.pathname);
+      window.history.replaceState({}, '', window.location.pathname);
 
       if (currentUser) {
         showDashboard();
@@ -1025,7 +1021,7 @@
       box.classList.remove('hidden');
     }
 
-    async function handleAuthSubmit(e) {
+    function handleAuthSubmit(e) {
       e.preventDefault();
       document.getElementById('authErrorBox').classList.add('hidden');
 
@@ -1068,7 +1064,6 @@
         localStorage.setItem(STORAGE_KEYS.CURRENT_USER, username);
         showToast(t('toastCreated'));
         showDashboard();
-        syncToCloud(db);
       } else {
         const existing = db[username];
         if (!existing || existing.password !== password) {
@@ -1105,7 +1100,7 @@
       document.getElementById('deleteModal').classList.add('hidden');
     }
 
-    async function confirmDeleteAccount() {
+    function confirmDeleteAccount() {
       if (!currentUser) return;
       const targetUsername = normalizeUsername(currentUser.username);
       const db = loadLocalUsers();
@@ -1124,7 +1119,6 @@
       closeDeleteModal();
       showToast(t('toastDeleted'));
       showAuthView();
-      await syncToCloud(db);
     }
 
     // ==========================================
@@ -1159,7 +1153,7 @@
 
     function updateShareUrlDisplay() {
       if (!draftProfile) return;
-      const shareUrl = buildPublicShareUrl(draftProfile.username);
+      const shareUrl = buildPublicShareUrl(draftProfile.username, draftProfile);
       document.getElementById('publicShareUrlBox').textContent = shareUrl;
       document.getElementById('qrUrlText').textContent = shareUrl;
     }
@@ -1213,19 +1207,21 @@
         const img = new Image();
         img.onload = function () {
           const canvas = document.createElement('canvas');
-          const maxW = type === 'banner' ? 480 : 180;
+          const maxW = type === 'banner' ? 600 : 220;
           const scale = Math.min(1, maxW / img.width);
           canvas.width = Math.max(1, Math.round(img.width * scale));
           canvas.height = Math.max(1, Math.round(img.height * scale));
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          const compressed = canvas.toDataURL('image/jpeg', 0.65);
+          const compressed = canvas.toDataURL('image/jpeg', 0.72);
 
           if (type === 'banner') {
             draftProfile.banner = compressed;
+            document.getElementById('bannerUrlInput').value = '';
             renderBannerPreview();
           } else {
             draftProfile.avatar = compressed;
+            document.getElementById('avatarUrlInput').value = '';
             renderAvatarPreview();
           }
         };
@@ -1243,18 +1239,21 @@
         draftProfile.avatar = clean;
         renderAvatarPreview();
       }
+      updateShareUrlDisplay();
     }
 
     function removeBanner() {
       draftProfile.banner = '';
       document.getElementById('bannerUrlInput').value = '';
       renderBannerPreview();
+      updateShareUrlDisplay();
     }
 
     function resetAvatar() {
       draftProfile.avatar = '';
       document.getElementById('avatarUrlInput').value = '';
       renderAvatarPreview();
+      updateShareUrlDisplay();
     }
 
     function renderBannerPreview() {
@@ -1263,8 +1262,8 @@
         box.innerHTML = `<img src="${escapeHTML(draftProfile.banner)}" alt="Banner" class="w-full h-full object-cover" />`;
       } else {
         box.textContent = currentLang === 'ar'
-          ? 'لا يوجد بنر مضاف — يمكنك رفع صورة أو لصق رابط'
-          : 'No banner added — upload or paste image URL';
+          ? 'لا يوجد بنر مضاف — يمكنك رفع صورة أو لصق رابط مباشر'
+          : 'No banner added — upload or paste direct image URL';
       }
     }
 
@@ -1335,7 +1334,7 @@
       }
     }
 
-    async function saveCurrentProfile() {
+    function saveCurrentProfile() {
       if (!draftProfile) return;
       draftProfile.displayName = document.getElementById('displayNameInput').value.trim() || draftProfile.username;
       draftProfile.bio = document.getElementById('bioInput').value.trim();
@@ -1353,7 +1352,6 @@
       renderAvatarPreview();
       updateShareUrlDisplay();
       showToast(t('toastSaved'));
-      await syncToCloud(db);
     }
 
     // ==========================================
@@ -1371,36 +1369,30 @@
       openPublicProfile(target);
     }
 
-    async function openPublicProfile(username, directProfileObj = null, binParam = null) {
+    function openPublicProfile(username, directProfileObj = null, hashPayloadStr = null) {
       hideAllViews();
       const cleanUser = normalizeUsername(username);
+      const db = loadLocalUsers();
+
       let profile = directProfileObj ? JSON.parse(JSON.stringify(directProfileObj)) : null;
+
+      if (!profile && hashPayloadStr) {
+        const decoded = decodeLightProfileHash(hashPayloadStr);
+        if (decoded && decoded.username === cleanUser) {
+          profile = decoded;
+        }
+      }
 
       if (!profile && currentUser && normalizeUsername(currentUser.username) === cleanUser) {
         profile = JSON.parse(JSON.stringify(currentUser));
       }
 
-      if (!profile) {
-        const db = loadLocalUsers();
-        if (db[cleanUser]) {
-          profile = JSON.parse(JSON.stringify(db[cleanUser]));
-        }
-      }
-
-      if (binParam) {
-        const cloudDb = await fetchFromCloud(binParam);
-        if (cloudDb && cloudDb[cleanUser]) {
-          const cloudUser = JSON.parse(JSON.stringify(cloudDb[cleanUser]));
-          profile = profile ? {
-            ...profile,
-            ...cloudUser,
-            avatar: cloudUser.avatar || profile.avatar || '',
-            banner: cloudUser.banner || profile.banner || ''
-          } : cloudUser;
-          const db = loadLocalUsers();
-          db[cleanUser] = profile;
-          saveLocalUsers(db);
-        }
+      if (!profile && db[cleanUser]) {
+        profile = JSON.parse(JSON.stringify(db[cleanUser]));
+      } else if (profile && db[cleanUser]) {
+        // Merge local uploaded images if present on this device
+        profile.avatar = profile.avatar || db[cleanUser].avatar || '';
+        profile.banner = profile.banner || db[cleanUser].banner || '';
       }
 
       const container = document.getElementById('publicProfileContainer');
@@ -1493,7 +1485,7 @@
     function getActiveShareUrl() {
       const targetProfile = draftProfile || window.__activePublicProfile || currentUser;
       if (!targetProfile) return window.location.href;
-      return buildPublicShareUrl(targetProfile.username);
+      return buildPublicShareUrl(targetProfile.username, targetProfile);
     }
 
     function copyShareUrl() {
@@ -1540,7 +1532,7 @@
     // ==========================================
     // INITIALIZATION ON LOAD / REFRESH
     // ==========================================
-    (async function init() {
+    (function init() {
       applyLanguageUI();
       const db = loadLocalUsers();
 
@@ -1551,10 +1543,10 @@
 
       const params = new URLSearchParams(window.location.search);
       const targetUser = normalizeUsername(params.get('u'));
-      const binParam = params.get('bin') || localStorage.getItem(STORAGE_KEYS.CLOUD_BIN);
+      const hashStr = window.location.hash || '';
 
       if (targetUser) {
-        await openPublicProfile(targetUser, null, binParam);
+        openPublicProfile(targetUser, null, hashStr);
       } else if (currentUser) {
         showDashboard();
       } else {
