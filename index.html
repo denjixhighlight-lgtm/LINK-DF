@@ -44,7 +44,7 @@
       --card-border: rgba(15, 23, 42, 0.1);
     }
 
-    /* 7 Glowing Accent Themes */
+    /* 9 Glowing Accent Themes */
     [data-theme="ocean"] {
       --accent-main: #0ea5e9;
       --accent-glow: rgba(14, 165, 233, 0.45);
@@ -86,6 +86,18 @@
       --accent-glow: rgba(59, 130, 246, 0.48);
       --accent-glow-soft: rgba(59, 130, 246, 0.18);
       --accent-secondary: #60a5fa;
+    }
+    [data-theme="obsidian"] {
+      --accent-main: #3f3f46;
+      --accent-glow: rgba(161, 161, 170, 0.35);
+      --accent-glow-soft: rgba(113, 113, 122, 0.18);
+      --accent-secondary: #a1a1aa;
+    }
+    [data-theme="darkblue"] {
+      --accent-main: #1d4ed8;
+      --accent-glow: rgba(29, 78, 216, 0.52);
+      --accent-glow-soft: rgba(29, 78, 216, 0.22);
+      --accent-secondary: #2563eb;
     }
 
     * {
@@ -197,7 +209,7 @@
     }
 
     .accent-text {
-      color: var(--accent-main);
+      color: var(--accent-secondary);
     }
 
     .accent-badge {
@@ -374,10 +386,10 @@
         </div>
       </div>
 
-      <!-- 7 Accent Colors -->
+      <!-- 9 Accent Colors -->
       <div>
-        <label id="accentLabel" class="block text-xs font-bold mb-2 opacity-85">اختر لون التوهج المضيء (7 ألوان)</label>
-        <div id="themeGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-2"></div>
+        <label id="accentLabel" class="block text-xs font-bold mb-2 opacity-85">اختر لون التوهج المضيء (9 ألوان)</label>
+        <div id="themeGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
       </div>
 
       <!-- Banner Upload / URL -->
@@ -452,6 +464,24 @@
       <button type="button" onclick="saveCurrentProfile()" id="saveBtn" class="glow-btn w-full py-3.5 rounded-2xl font-black text-sm">
         حفظ التغييرات الآن
       </button>
+
+      <!-- Delete Account Section -->
+      <div id="deleteAccountSection" class="pt-4 mt-2 border-t border-rose-500/25 space-y-2.5">
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <h3 id="deleteAccountTitle" class="text-xs font-black text-rose-400">حذف الحساب نهائياً</h3>
+            <p id="deleteAccountDesc" class="text-[11px] opacity-65">سيتم مسح حسابك وجميع روابطك وبياناتك ولا يمكن التراجع.</p>
+          </div>
+          <button
+            type="button"
+            id="deleteAccountBtn"
+            onclick="openDeleteModal()"
+            class="px-3.5 py-2 rounded-xl text-xs font-extrabold bg-rose-500/15 border border-rose-500/40 text-rose-300 hover:bg-rose-500/25 transition-all shrink-0"
+          >
+            حذف الحساب
+          </button>
+        </div>
+      </div>
     </div>
   </main>
 
@@ -476,6 +506,27 @@
     </div>
   </div>
 
+  <!-- DELETE ACCOUNT CONFIRMATION MODAL -->
+  <div id="deleteModal" onclick="if(event.target===this) closeDeleteModal()" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass-panel rounded-3xl p-6 max-w-sm w-full text-center relative space-y-4 border-rose-500/40">
+      <div class="w-12 h-12 rounded-2xl bg-rose-500/15 border border-rose-500/40 text-rose-400 flex items-center justify-center mx-auto text-xl font-black">
+        !
+      </div>
+      <h3 id="deleteModalTitle" class="text-lg font-black text-rose-400">تأكيد حذف الحساب</h3>
+      <p id="deleteModalText" class="text-xs opacity-80 leading-relaxed">
+        هل أنت متأكد من حذف حسابك نهائياً؟ سيتم إزالة صفحتك وروابطك بشكل كامل.
+      </p>
+      <div class="grid grid-cols-2 gap-2.5 pt-1">
+        <button type="button" onclick="closeDeleteModal()" id="cancelDeleteBtn" class="py-2.5 px-3 rounded-xl text-xs font-extrabold border border-white/15 hover:bg-white/5 transition-all">
+          إلغاء
+        </button>
+        <button type="button" onclick="confirmDeleteAccount()" id="confirmDeleteBtn" class="py-2.5 px-3 rounded-xl text-xs font-extrabold bg-rose-600 hover:bg-rose-500 text-white transition-all">
+          نعم، احذف الحساب
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ==========================================
     // CONFIG & STORAGE KEYS
@@ -487,7 +538,6 @@
       LANG: 'dflink_lang_v2'
     };
 
-    // JSONBin.io public/master configuration for cross-device sync
     const JSONBIN_API_KEY = '$2a$10$8vK9xLq2mP5nR7wT1yZ3uO6aB4cD8eF0gH2jK4lM6nP8qR0sT2uV4';
     const JSONBIN_BASE = 'https://api.jsonbin.io/v3/b';
 
@@ -498,19 +548,34 @@
       { id: 'crimson', ar: 'وردي قرمزي', en: 'Crimson Rose', color: '#f43f5e' },
       { id: 'emerald', ar: 'أخضر زمردي', en: 'Emerald Glow', color: '#10b981' },
       { id: 'amber', ar: 'عنبر دافئ', en: 'Warm Amber', color: '#f59e0b' },
-      { id: 'royal', ar: 'أزرق ملكي', en: 'Royal Blue', color: '#3b82f6' }
+      { id: 'royal', ar: 'أزرق ملكي', en: 'Royal Blue', color: '#3b82f6' },
+      { id: 'obsidian', ar: 'أسود داكن', en: 'Obsidian Black', color: '#18181b' },
+      { id: 'darkblue', ar: 'أزرق داكن', en: 'Dark Blue', color: '#1d4ed8' }
     ];
 
+    // Clean SVG Platform Icons
+    const PLATFORM_ICONS = {
+      tiktok: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>`,
+      instagram: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>`,
+      youtube: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`,
+      x: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>`,
+      snapchat: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a5.5 5.5 0 0 0-5.5 5.5c0 2.1.6 3.6.2 4.6-.4 1-1.7 1.3-2.5 1.5-.5.1-.7.5-.5.9.3.6 1.4 1 2.4 1.3.2.5 0 1.4-.6 2.1-.3.3-.1.8.3.9 1.2.2 2.4.7 3.2 1.2.8.5 1.6.7 2.4.7s1.6-.2 2.4-.7c.8-.5 2-1 3.2-1.2.4-.1.6-.6.3-.9-.6-.7-.8-1.6-.6-2.1 1-.3 2.1-.7 2.4-1.3.2-.4 0-.8-.5-.9-.8-.2-2.1-.5-2.5-1.5-.4-1 .2-2.5.2-4.6A5.5 5.5 0 0 0 12 3z"/></svg>`,
+      discord: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>`,
+      whatsapp: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21"/><path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1"/></svg>`,
+      telegram: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>`,
+      website: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`
+    };
+
     const PLATFORMS = [
-      { id: 'tiktok', label: 'TikTok', icon: '🎵' },
-      { id: 'instagram', label: 'Instagram', icon: '📸' },
-      { id: 'youtube', label: 'YouTube', icon: '▶️' },
-      { id: 'x', label: 'X (Twitter)', icon: '𝕏' },
-      { id: 'snapchat', label: 'Snapchat', icon: '👻' },
-      { id: 'discord', label: 'Discord', icon: '🎮' },
-      { id: 'whatsapp', label: 'WhatsApp', icon: '💬' },
-      { id: 'telegram', label: 'Telegram', icon: '✈️' },
-      { id: 'website', label: 'رابط مخصص / Website', icon: '🔗' }
+      { id: 'tiktok', label: 'TikTok', icon: PLATFORM_ICONS.tiktok },
+      { id: 'instagram', label: 'Instagram', icon: PLATFORM_ICONS.instagram },
+      { id: 'youtube', label: 'YouTube', icon: PLATFORM_ICONS.youtube },
+      { id: 'x', label: 'X (Twitter)', icon: PLATFORM_ICONS.x },
+      { id: 'snapchat', label: 'Snapchat', icon: PLATFORM_ICONS.snapchat },
+      { id: 'discord', label: 'Discord', icon: PLATFORM_ICONS.discord },
+      { id: 'whatsapp', label: 'WhatsApp', icon: PLATFORM_ICONS.whatsapp },
+      { id: 'telegram', label: 'Telegram', icon: PLATFORM_ICONS.telegram },
+      { id: 'website', label: 'رابط مخصص / Website', icon: PLATFORM_ICONS.website }
     ];
 
     const I18N = {
@@ -541,7 +606,7 @@
         modeLabel: 'وضع الإضاءة (ليلي / صباحي)',
         modeNight: '🌙 ثيم ليلي متوهج',
         modeMorning: '☀️ ثيم صباحي مضيء',
-        accentLabel: 'اختر لون التوهج المضيء (7 ألوان)',
+        accentLabel: 'اختر لون التوهج المضيء (9 ألوان)',
         bannerLabel: 'بنر علوي مندمج مع الثيم (يظهر للزوار)',
         removeBanner: 'إزالة البنر',
         uploadBanner: 'رفع بنر من الجهاز',
@@ -554,6 +619,14 @@
         linksTitle: 'إدارة الروابط والحسابات',
         addLink: '+ إضافة رابط جديد',
         saveBtn: 'حفظ التغييرات الآن',
+        deleteAccountTitle: 'حذف الحساب نهائياً',
+        deleteAccountDesc: 'سيتم مسح حسابك وجميع روابطك وبياناتك ولا يمكن التراجع.',
+        deleteAccountBtn: 'حذف الحساب',
+        deleteModalTitle: 'تأكيد حذف الحساب',
+        deleteModalText: 'هل أنت متأكد من حذف حسابك نهائياً؟ سيتم إزالة صفحتك وروابطك بشكل كامل.',
+        cancelDeleteBtn: 'إلغاء',
+        confirmDeleteBtn: 'نعم، احذف الحساب',
+        toastDeleted: 'تم حذف الحساب بنجاح.',
         qrTitle: 'رمز QR لصفحتك',
         qrDesc: 'امسح الرمز بكاميرا الهاتف لفتح صفحتك مباشرة',
         qrCopy: 'نسخ رابط الصفحة',
@@ -595,7 +668,7 @@
         modeLabel: 'Lighting Mode (Night / Morning)',
         modeNight: '🌙 Glowing Night',
         modeMorning: '☀️ Bright Morning',
-        accentLabel: 'Choose Glowing Accent (7 Colors)',
+        accentLabel: 'Choose Glowing Accent (9 Colors)',
         bannerLabel: 'Top Theme-Blended Banner',
         removeBanner: 'Remove Banner',
         uploadBanner: 'Upload Banner',
@@ -608,6 +681,14 @@
         linksTitle: 'Manage Links & Socials',
         addLink: '+ Add New Link',
         saveBtn: 'Save All Changes',
+        deleteAccountTitle: 'Delete Account Permanently',
+        deleteAccountDesc: 'Your account, links, and data will be permanently removed.',
+        deleteAccountBtn: 'Delete Account',
+        deleteModalTitle: 'Confirm Account Deletion',
+        deleteModalText: 'Are you sure you want to permanently delete your account and all its links?',
+        cancelDeleteBtn: 'Cancel',
+        confirmDeleteBtn: 'Yes, Delete Account',
+        toastDeleted: 'Account deleted successfully.',
         qrTitle: 'Your Profile QR Code',
         qrDesc: 'Scan with phone camera to open your public page directly',
         qrCopy: 'Copy Page Link',
@@ -672,7 +753,6 @@
       }, 3000);
     }
 
-    // Encode/Decode profile payload inside URL hash/query so shared links ALWAYS work even across different devices without backend setup
     function encodeProfilePayload(profile) {
       try {
         const minimal = {
@@ -871,11 +951,22 @@
       document.getElementById('addLinkBtn').textContent = t('addLink');
       document.getElementById('saveBtn').textContent = t('saveBtn');
 
+      document.getElementById('deleteAccountTitle').textContent = t('deleteAccountTitle');
+      document.getElementById('deleteAccountDesc').textContent = t('deleteAccountDesc');
+      document.getElementById('deleteAccountBtn').textContent = t('deleteAccountBtn');
+      document.getElementById('deleteModalTitle').textContent = t('deleteModalTitle');
+      document.getElementById('deleteModalText').textContent = t('deleteModalText');
+      document.getElementById('cancelDeleteBtn').textContent = t('cancelDeleteBtn');
+      document.getElementById('confirmDeleteBtn').textContent = t('confirmDeleteBtn');
+
       document.getElementById('qrTitle').textContent = t('qrTitle');
       document.getElementById('qrDesc').textContent = t('qrDesc');
       document.getElementById('qrCopyBtn').textContent = t('qrCopy');
 
-      if (draftProfile) renderThemeButtons();
+      if (draftProfile) {
+        renderThemeButtons();
+        renderLinksEditor();
+      }
     }
 
     function toggleLanguage() {
@@ -956,7 +1047,7 @@
     }
 
     // ==========================================
-    // AUTH LOGIC (WITH PERSISTENT SESSION)
+    // AUTH LOGIC & ACCOUNT DELETION
     // ==========================================
     function switchAuthTab(mode) {
       authMode = mode;
@@ -1021,7 +1112,6 @@
         db[username] = newProfile;
         saveLocalUsers(db);
         currentUser = newProfile;
-        // Persist session so refresh keeps user logged in!
         localStorage.setItem(STORAGE_KEYS.CURRENT_USER, username);
         showToast(t('toastCreated'));
         showDashboard();
@@ -1033,7 +1123,6 @@
           return;
         }
         currentUser = existing;
-        // Persist session so refresh keeps user logged in!
         localStorage.setItem(STORAGE_KEYS.CURRENT_USER, username);
         showToast(t('toastWelcome'));
         showDashboard();
@@ -1053,6 +1142,36 @@
       draftProfile = null;
       localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
       showAuthView();
+    }
+
+    function openDeleteModal() {
+      document.getElementById('deleteModal').classList.remove('hidden');
+    }
+
+    function closeDeleteModal() {
+      document.getElementById('deleteModal').classList.add('hidden');
+    }
+
+    async function confirmDeleteAccount() {
+      if (!currentUser) return;
+      const targetUsername = normalizeUsername(currentUser.username);
+      const db = loadLocalUsers();
+
+      if (db[targetUsername]) {
+        delete db[targetUsername];
+      }
+      if (!db.demo) {
+        db.demo = getDefaultDemoUser();
+      }
+
+      saveLocalUsers(db);
+      currentUser = null;
+      draftProfile = null;
+      localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+      closeDeleteModal();
+      showToast(t('toastDeleted'));
+      showAuthView();
+      await syncToCloud(db);
     }
 
     // ==========================================
@@ -1120,7 +1239,7 @@
             onclick="selectAccentTheme('${th.id}')"
             class="flex items-center gap-2 p-2.5 rounded-xl text-xs font-bold border transition-all ${active ? 'glow-border accent-badge' : 'border-white/15 opacity-80 hover:opacity-100'}"
           >
-            <span class="w-4 h-4 rounded-full shrink-0" style="background:${th.color}; box-shadow: 0 0 10px ${th.color};"></span>
+            <span class="w-4 h-4 rounded-full shrink-0 border border-white/25" style="background:${th.color}; box-shadow: 0 0 10px ${th.color};"></span>
             <span class="truncate">${currentLang === 'ar' ? th.ar : th.en}</span>
           </button>
         `;
@@ -1140,7 +1259,6 @@
       reader.onload = function (e) {
         const img = new Image();
         img.onload = function () {
-          // Compress image to fit cleanly in storage
           const canvas = document.createElement('canvas');
           const maxW = type === 'banner' ? 900 : 320;
           const scale = Math.min(1, maxW / img.width);
@@ -1209,31 +1327,37 @@
     function renderLinksEditor() {
       const container = document.getElementById('linksEditorContainer');
       const links = draftProfile.links || [];
-      container.innerHTML = links.map((link, idx) => `
-        <div class="p-3.5 rounded-2xl border border-white/10 space-y-2.5" style="background: var(--surface-subtle);">
-          <div class="flex items-center gap-2">
-            <select onchange="updateLinkField(${idx}, 'platform', this.value)" class="input-field rounded-xl px-3 py-2 text-xs font-bold">
-              ${PLATFORMS.map(p => `<option value="${p.id}" ${link.platform === p.id ? 'selected' : ''}>${p.icon} ${p.label}</option>`).join('')}
-            </select>
+      container.innerHTML = links.map((link, idx) => {
+        const currentPlat = PLATFORMS.find(p => p.id === link.platform) || PLATFORMS[PLATFORMS.length - 1];
+        return `
+          <div class="p-3.5 rounded-2xl border border-white/10 space-y-2.5" style="background: var(--surface-subtle);">
+            <div class="flex items-center gap-2">
+              <div class="w-9 h-9 rounded-xl accent-badge flex items-center justify-center shrink-0">
+                ${currentPlat.icon}
+              </div>
+              <select onchange="updateLinkField(${idx}, 'platform', this.value); renderLinksEditor();" class="input-field rounded-xl px-3 py-2 text-xs font-bold">
+                ${PLATFORMS.map(p => `<option value="${p.id}" ${link.platform === p.id ? 'selected' : ''}>${p.label}</option>`).join('')}
+              </select>
+              <input
+                type="text"
+                value="${escapeHTML(link.title)}"
+                oninput="updateLinkField(${idx}, 'title', this.value)"
+                placeholder="${currentLang === 'ar' ? 'عنوان الرابط (مثلاً: حسابي على تيك توك)' : 'Link Title'}"
+                class="input-field flex-1 rounded-xl px-3 py-2 text-xs font-bold"
+              />
+              <button type="button" onclick="removeLinkRow(${idx})" class="w-8 h-8 rounded-xl bg-rose-500/15 text-rose-400 font-bold text-xs hover:bg-rose-500/25 shrink-0">✕</button>
+            </div>
             <input
-              type="text"
-              value="${escapeHTML(link.title)}"
-              oninput="updateLinkField(${idx}, 'title', this.value)"
-              placeholder="${currentLang === 'ar' ? 'عنوان الرابط (مثلاً: حسابي على تيك توك)' : 'Link Title'}"
-              class="input-field flex-1 rounded-xl px-3 py-2 text-xs font-bold"
+              type="url"
+              dir="ltr"
+              value="${escapeHTML(link.url)}"
+              oninput="updateLinkField(${idx}, 'url', this.value)"
+              placeholder="https://..."
+              class="input-field w-full rounded-xl px-3 py-2 text-xs"
             />
-            <button type="button" onclick="removeLinkRow(${idx})" class="w-8 h-8 rounded-xl bg-rose-500/15 text-rose-400 font-bold text-xs hover:bg-rose-500/25">✕</button>
           </div>
-          <input
-            type="url"
-            dir="ltr"
-            value="${escapeHTML(link.url)}"
-            oninput="updateLinkField(${idx}, 'url', this.value)"
-            placeholder="https://..."
-            class="input-field w-full rounded-xl px-3 py-2 text-xs"
-          />
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
     function addNewLinkRow() {
@@ -1262,7 +1386,6 @@
       draftProfile.bio = document.getElementById('bioInput').value.trim();
       draftProfile.verified = document.getElementById('verifiedCheckbox').checked;
 
-      // Filter out empty URLs
       draftProfile.links = (draftProfile.links || []).filter(l => l.url && l.url.trim().length > 4);
 
       const db = loadLocalUsers();
@@ -1303,7 +1426,6 @@
         profile = db[cleanUser] || null;
       }
 
-      // Try fetching from cloud bin if specified in URL
       if (!profile && binParam) {
         const cloudDb = await fetchFromCloud(binParam);
         if (cloudDb && cloudDb[cleanUser]) {
@@ -1314,7 +1436,6 @@
         }
       }
 
-      // Fallback to URL-encoded payload so shared QR links always render everywhere
       if (!profile && packedParam) {
         const decoded = decodeProfilePayload(packedParam);
         if (decoded && normalizeUsername(decoded.username) === cleanUser) {
@@ -1341,7 +1462,6 @@
         return;
       }
 
-      // Store active profile for QR modal
       window.__activePublicProfile = profile;
       applyTheme(profile.mode, profile.theme);
       updateNavbar('public');
@@ -1367,7 +1487,7 @@
         return `
           <a href="${escapeHTML(safeUrl)}" target="_blank" rel="noopener noreferrer" class="link-card rounded-2xl p-4 flex items-center justify-between gap-3 group">
             <div class="flex items-center gap-3 min-w-0">
-              <div class="w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0 accent-badge">
+              <div class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 accent-badge">
                 ${plat.icon}
               </div>
               <div class="min-w-0">
@@ -1464,7 +1584,6 @@
       applyLanguageUI();
       const db = loadLocalUsers();
 
-      // Restore saved session if present
       const savedSessionUser = normalizeUsername(localStorage.getItem(STORAGE_KEYS.CURRENT_USER));
       if (savedSessionUser && db[savedSessionUser]) {
         currentUser = db[savedSessionUser];
@@ -1476,10 +1595,8 @@
       const packedParam = params.get('p');
 
       if (targetUser) {
-        // Direct link or QR scan -> open public profile immediately
         await openPublicProfile(targetUser, null, binParam, packedParam);
       } else if (currentUser) {
-        // Logged-in user refreshed the page -> keep them inside their Dashboard!
         showDashboard();
       } else {
         showAuthView();
